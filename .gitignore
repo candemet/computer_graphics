@@ -26,3 +26,9 @@ Thumbs.db
 # Generated BMP files
 *.bmp
 
+# Sessions folder
+Sessions/
+
+# Clang format
+.clang-format
+

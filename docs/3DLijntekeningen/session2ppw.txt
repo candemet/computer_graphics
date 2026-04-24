@@ -1,0 +1,805 @@
+Opdracht 3D-Lijntekeningen
+
+Tim Apers
+
+3D-Lijntekeningen
+• Inhoud
+– Voorstelling van Punten & Vectoren
+– De Matrix & Vector Library
+– Opdracht 3D Lijntekeningen
+• Transformaties
+• Eye-point transformatie
+• Perspectiefprojectie
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+2
+
+Voorstelling van Punten & Vectoren
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+3
+
+Voorstelling van Punten & Vectoren
+• Punten en Vectoren worden met homogene coördinaten
+voorgesteld
+– Punt
+– Vector
+
+bij een punt is de 4e coördinaat altijd gelijk aan 1
+bij een vector is de 4e coördinaat altijd gelijk aan 0
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+4
+
+Voorstelling van Punten & Vectoren
+• Eigenschappen van homogene coördinaten
+– De som van een punt en een vector is een punt
+• Punt
+• Vector
+•
+
+– Dit is het punt dat we krijgen door
+verschuiven
+
+over de vector
+
+te
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+5
+
+Voorstelling van Punten & Vectoren
+• Eigenschappen van homogene coördinaten
+– De som van twee vectoren blijft een vector
+• Vector
+• Vector
+•
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+6
+
+Voorstelling van Punten & Vectoren
+• Eigenschappen van homogene coördinaten
+– Het verschil van twee punten is een vector
+• Punt
+• Punt
+•
+
+– Dit is de vector die
+
+en
+
+verbindt
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+7
+
+Voorstellingen van Punten & Vectoren
+• Matrices worden gebruikt om transformaties voor te
+stellen
+– Punt
+– Vb: Transformatiematrix
+
+– Punt na transformatie
+
+– Bij gebruik van homogene coördinaten kunnen verschuivingen
+ook als matrices worden voorgesteld !!
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+8
+
+Matrix & Vector Library
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+9
+
+Matrix & Vector Library
+• 4x4 Matrices
+#include <iostream>
+#include “vector.hh”
+int main()
+{
+//Matrices worden geïnitialiseerd
+//op de eenheidsmatrix
+Matrix rot_z;
+std::cout << “Unity: ” << std::endl
+<< rot_z << std::endl;
+//Elementen kunnen individueel
+//aangepast worden en worden
+//vanaf 1 geïndexeerd
+rot_z(1,1) = 0;
+rot_z(1,2) = -1;
+rot_z(2,1) = 1;
+rot_z(2,2) = 0;
+std::cout << “Z-axis Rotation”
+<< rot_z
+<< std::endl;
+return 0;
+}
+
+Output:
+Unity:
+/
+1
+|
+0
+|
+0
+\
+0
+
+0
+1
+0
+0
+
+0
+0
+1
+0
+
+0\
+0|
+0|
+1/
+
+Z-axis Rotation
+/
+0
+-1
+0
+|
+1
+0
+0
+|
+0
+0
+1
+\
+0
+0
+0
+
+0\
+0|
+0|
+1/
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+10
+
+Matrix & Vector Library
+• 4x4 Matrices
+#include <iostream>
+#include “vector.hh”
+int main()
+{
+Matrix a,b,c;
+a(1,1) = 2.0;
+b(2,2) = 3.0;
+//Matrices kunnen met elkaar worden
+//vermenigvuldigd
+c = a*b;
+std::cout << “Matrix A:” <<
+std::endl
+<< a << std::endl;
+std::cout << “Matrix B:” <<
+std::endl
+<< b << std::endl;
+std::cout << “Matrix C:” <<
+std::endl
+<< c << std::endl;
+return 0;
+}
+
+Output:
+Matrix A:
+/
+2
+0
+|
+0
+1
+|
+0
+0
+\
+0
+0
+
+0
+0
+1
+0
+
+0\
+0|
+0|
+1/
+
+Matrix B:
+/
+1
+0
+|
+0
+3
+|
+0
+0
+\
+0
+0
+
+0
+0
+1
+0
+
+0\
+0|
+0|
+1/
+
+Matrix C:
+/
+2
+0
+|
+0
+3
+|
+0
+0
+\
+0
+0
+
+0
+0
+1
+0
+
+0\
+0|
+0|
+1/
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+11
+
+Matrix & Vector Library
+• Vector3D
+#include <iostream>
+#include “vector.hh”
+
+Output:
+
+int main()
+{
+//Zo maak je een punt aan
+Vector3D a =
+Vector3D::point(1.0, 2.0, 1.5);
+//Zo maak je een vector aan
+Vector3D q =
+Vector3D::vector(1.0, 2.0, 1.5);
+
+This is a point:
+(
+1,
+2, 1.5,
+This is a vector:
+(
+1,
+2, 1.5,
+Point a:
+(
+5,
+4,
+3,
+
+1)
+0)
+1)
+
+std::cout << “This is a point:”
+<< std::endl << a << std::endl;
+std::cout << “This is a vector:”
+<< std::endl << q << std::endl;
+//Zo pas je de coördinaten van
+//een punt/vector aan
+a.x = 5.0;
+a.y = 4.0;
+a.z = 3.0;
+std::cout << “Point a:”
+<< std::endl << a << std::endl;
+}
+
+return 0;
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+12
+
+Matrix & Vector Library
+• Vector3D
+#include <iostream>
+#include “vector.hh”
+
+Output:
+
+int main()
+{
+Vector3D a =
+Vector3D::point(1.0, 2.0, 1.5);
+Vector3D b = a;
+Vector3D q =
+Vector3D::vector(2.0, 1.0, 3.5);
+Vector3D p = q;
+
+a+q=(
+p+q=(
+b-a=(
+
+3,
+4,
+0,
+
+3,
+2,
+0,
+
+5,
+7,
+0,
+
+1)
+0)
+0)
+
+2*a=(
+2*q=(
+
+2,
+4,
+
+4,
+2,
+
+3,
+7,
+
+1)
+0)
+
+//Vector3D zorgt voor de
+//Correcte punt <-> vector omzetting
+std::cout << “a+q=” << a+q << std::endl;
+std::cout << “p+q=” << p+q << std::endl;
+std::cout << “b-a=” << b-a << std::endl;
+std::cout << std::endl;
+//Punten en vectoren blijven
+//Punten en vectoren wanneer ze
+//Geschaald worden
+std::cout << “2*a=” << 2*a << std::endl;
+std::cout << “2*q=” << 2*q << std::endl;
+
+}
+
+return 0;
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+13
+
+Matrix & Vector Library
+• Enkele andere interessante operaties:
+– Vector3D::normalise()
+• Normaliseert een Vector
+
+– Vector3D::length()
+• Berekent de lengte van een vector
+
+– Vector3D::cross(…)
+• Berekent het uitwendig product van twee Vectoren
+
+– Vector3D::dot(…)
+• Berekent het inproduct tussen twee Vectoren
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+14
+
+Opdracht 3D Lijntekeningen
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+15
+
+3D-Lijntekeningen
+• De opgave bestaat uit drie grote delen
+– Transformaties
+– Eye-point transformatie
+– Perspectiefprojectie
+
+• De functionaliteit van deze opgave heb je in alle
+volgende opgaves terug nodig. Het is dus zéér belangrijk
+dat je implementatie correct en makkelijk te gebruiken
+is !!
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+16
+
+Datastructuur
+• Maak een data structuur aan om 3D Figuren in bij te
+houden
+– Een 3D Figuur wordt gekenmerkt door
+• Een aantal punten
+• Een aantal vlakken (en geen lijnen !!)
+– Elk vlak bevat 2 of meerdere punten
+
+• Een kleur
+
+– Er kunnen meerdere 3D Figuren in één afbeelding
+voorkomen
+– De opgestelde datastructuur heb je voor alle volgende
+opgaven terug nodig !!
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+17
+
+Datastructuur
+• Maak een data structuur aan om 3D Figuren in bij te
+houden
+– Stel zelf een zinvolle datastructuur op, of baseer je op de
+gegeven datastructuren
+• De gegeven code dient enkel als voorbeeld. Het kan nuttig zijn
+om, daar waar nodig, de nodige abstracties in te voeren
+class Face
+{
+public:
+//De indexen refereren naar
+//punten in de ‘points’ vector
+//van de Figure-klasse
+std::vector<int> point_indexes;
+};
+
+class Figure
+{
+public:
+std::vector<Vector3D> points;
+std::vector<Face> faces;
+Color color;
+};
+typedef std::list<Figure>
+Figures3D;
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+18
+
+Transformaties
+•
+
+Implementeer de nodige functies om transformatiematrices te genereren voor volgende transformaties
+– Schaling
+– Rotatie om de X-as
+– Rotatie om de Y-as
+– Rotatie om de Z-as
+– Verschuiving
+
+•
+
+Let op: Deze matrices dienen om punten te transformeren.
+Niet om basissen te transformeren !!
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+19
+
+Transformaties
+• Schalen
+– Deze transformatie zal een figuur vergroten of verkleinen
+afhankelijk van de schaalfactor scale
+– Vb: Matrix scaleFigure(const double scale);
+–
+
+– De figuur moet hiervoor rond (0,0,0) gecentreerd zijn !
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+20
+
+Transformaties
+• Rotatie om de X-as
+– Deze transformatie zal een figuur over een hoek  roteren
+om de X-as
+– Vb: Matrix rotateX(const double angle);
+–
+
+– Let op: In de cursus worden basistransformaties beschreven,
+voor het practicum worden punttransformaties gebruikt.
+Gebruik daarom bovenstaande matrix en niet die uit de
+cursus.
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+21
+
+Transformaties
+• Rotatie om de Y-as
+– Deze transformatie zal een figuur over een hoek  roteren
+om de Y-as
+– Vb: Matrix rotateY(const double angle);
+–
+
+– Let op: In de cursus worden basistransformaties beschreven,
+voor het practicum worden punttransformaties gebruikt.
+Gebruik daarom bovenstaande matrix en niet die uit de
+cursus.
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+22
+
+Transformaties
+• Rotatie om de Z-as
+– Deze transformatie zal een figuur over een hoek  roteren
+om de Z-as
+– Vb: Matrix rotateZ(const double angle);
+–
+
+– Let op: In de cursus worden basistransformaties beschreven,
+voor het practicum worden punttransformaties gebruikt.
+Gebruik daarom bovenstaande matrix en niet die uit de
+cursus.
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+23
+
+Transformaties
+• Verschuiving over een vector (a,b,c,0)
+– Deze transformatie zal een figuur over een vector (a,b,c,0)
+verschuiven
+– Vb: Matrix translate(const Vector3D &vector);
+–
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+24
+
+Transformaties
+• Toepassen van transformaties op een 3D Figuur
+– Schrijf een methode/functie die alle punten van een Figure
+vermenigvuldigt met een Matrix
+– Vb: void applyTransformation(Figure &, const Matrix &);
+
+• Alle transformaties kunnen in één keer worden
+uitgevoerd
+– Associativiteit:
+
+Daarna de Rotatie
+En ten slotte de verschuiving
+
+–
+
+Eerst wordt de schaling uitgevoerd
+
+– Pas daarna de transformatie
+
+toe
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+25
+
+Transformaties
+• Samenvoegen van
+transformaties
+#include <iostream>
+#include "vector.hh"
+int main()
+{
+Matrix rotZ, trans;
+Vector3D p0;
+rotZ(1,1) = 0.866025404;
+rotZ(1,2) = 0.5;
+rotZ(2,1) = -0.5;
+rotZ(2,2) = rotZ(1,1);
+trans(4,1) = 1.0;
+trans(4,2) = 2.0;
+trans(4,3) = 3.0;
+Matrix combined = rotZ*trans;
+
+}
+
+Output:
+p0 =
+1)
+p1 = p0*rotZ =
+1)
+p1*trans =
+1)
+p0*combined =
+1)
+
+(
+
+2,
+
+3, 4,
+
+(0.232051, 3.59808, 4,
+(1.23205, 5.59808,
+
+7,
+
+(1.23205, 5.59808,
+
+7,
+
+p0 = Vector3D::point(2.0, 3.0, 4.0);
+std::cout << "p0 =\t\t" << p0 << std::endl;
+Vector3D p1 = p0*rotZ;
+std::cout << "p1 = p0*rotZ =\t"
+<< p1 << std::endl;
+std::cout << "p1*trans =\t"
+<< (p1*trans) << std::endl;
+std::cout << "p0*combined =\t"
+<< (p0*combined) << std::endl;
+return 0;
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+26
+
+Eye-point transformatie
+• Implementeer de nodige functionaliteit om de eyepointtransformatie uit te voeren
+– Schrijf een methode/functie die de eyepoint transformatie
+Matrix berekent op basis van een Vector3D object
+• Vb: Matrix eyePointTrans(const Vector3D &eyepoint);
+
+– Schrijf een methode/functie die deze transformatie uitvoert op
+alle punten van alle 3D Figuren
+• Vb: void applyTransformation(Figures3D &,
+const Matrix &);
+– Deze methode/functie kan gebruik maken van de
+applyTransformation functie op de van de vorige slide.
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+27
+
+Eye-point transformatie
+• Transformeer het assenstelsel zó dat we eenvoudig
+kunnen projecteren:
+– Oorsprong in het oogpunt
+– X-as wijst naar rechts
+– Y-as wijst naar boven
+– Z-as wijst weg van de oude oorsprong
+z
+
+y
+
+y
+
+x
+x
+
+z
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+28
+
+Eye-point transformatie
+• Transformeer het assenstelsel zó dat we eenvoudig
+kunnen projecteren:
+– Rotatie om de Z-as
+• X-as moet naar rechts
+wijzen
+
+– Rotatie om de X-as
+• Z-as moet naar
+het oogpunt wijzen
+
+– Verschuiving
+• Oorsprong moet
+met het oogpunt
+samenvallen
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+29
+
+Eye-point transformatie
+• Eye-point transformatie matrix opstellen
+1. Omzetten van carthesische naar poolcoördinaten
+• vb: void toPolar(
+
+const Vector3D &point,
+double &theta,
+double &phi,
+double &r);
+
+–
+
+Let op:
+
+–
+
+Maak gebruik van:
+• double std::atan2(double y, double x);
+• double std::acos(double r);
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+30
+
+Eye-point transformatie
+• Eye-point transformatie matrix opstellen
+2. Transformatiematrix opstellen:
+
+•
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+31
+
+Perspectiefprojectie
+• Implementeer de nodige functionaliteit om de
+perspectiefprojectie uit te voeren op een lijst van 3D
+Figuren
+– Schrijf een functie/klasse die een Figures3D object omzet in
+een Lines2D object
+– Vb: Lines2D doProjection(const Figures3D &);
+
+• De resulterende 2D-lijntekening kan dan getekend
+worden als elke andere 2D-lijntekening
+– Gebruik img::EasyImage draw2DLines(
+Lines2D& lines,
+int size);
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+32
+
+Perspectiefprojectie
+• Individuele punten projecteren:
+– Schrijf een klasse/functie die een Vector3D object in een
+Point2D object omzet
+• Vb: Point2D doProjection(const Vector3D &point,
+const double d);
+•
+
+– Stel Enkel voor deze opdracht
+. De 2D Lijntekening wordt
+toch herschaald voor ze op de Image wordt getekend.
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+33
+
+3D Lijntekeningen
+• Tips
+– Zorg éérst dat de eye-point transformatie en de
+perspectiefprojectie naar behoren werken.
+– Zorg daarna dat je engine in staat is om lijntekeningen uit te
+lezen en weer te geven.
+– Eens dat allemaal in orde is, kun je aan het implementeren van
+de transformaties beginnen
+
+Practicum Computer Graphics: 3D-Lijntekeningen
+
+34
+
+

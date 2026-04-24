@@ -1,6 +1,7 @@
 # Build directories
 build/
 cmake-build-*/
+data/
 
 # Compiled objects
 *.o
@@ -25,9 +26,7 @@ Thumbs.db
 
 # Generated BMP files
 *.bmp
-
-# Sessions folder
-Sessions/
+*.png
 
 # Clang format
 .clang-format

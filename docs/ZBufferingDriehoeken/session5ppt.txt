@@ -1,0 +1,314 @@
+Z-buffering met driehoeken
+Tim Apers
+
+Z-Buffering met driehoeken
+• Opdracht: breid je engine uit met de nodige functionaliteit
+om Z-buffering met driehoeken toe te passen:
+Z
+
+Y
+
+Genereren van 3D Figuren,
+Uitvoeren v. Transformaties
+ini::Configuration
+
+X Figures3D
+Triangulatie
+Projectie
+(opdelen in 3-hoeken)
+YZ
+
+Y
+Y
+EasyImage::
+draw_line(…);
+
+Projecteren &
+Y Omzetten naar Z-Buffering toepassen
+X
+pixel-coördinaten
+X
+X Figures3D
+
+X
+img::EasyImage
+
+Lines2D
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+2
+
+Voorbereidingen voor het Z-Buffer algoritme
+1. Triangulatie
+– Het Z-Buffering algoritme werkt op driehoeken
+– De 3D figuren maken ook gebruik van
+• 4-hoeken (Kubus)
+• 5-hoeken (Dodecaëder)
+• n-hoeken (cilinder, kegel)
+
+De vlakken van de 3D-figuren moeten worden opgedeeld in
+driehoeken
+• Dit kan tijdens het aanmaken van de figuren
+– Pas op: de originele figuren moeten ook nog gegenereerd
+kunnen worden
+• Dit kan ook achteraf gebeuren
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+3
+
+Voorbereidingen voor het Z-Buffer algoritme
+1. Triangulatie
+P2
+
+– Implementeer een klasse/methode om
+een willekeurige veelhoek te trianguleren:
+P3
+– Vb: std::vector<Face> triangulate(
+
+P1
+
+const Face& face);
+
+P4
+
+– Begin met de n-hoek
+F = [P0, P1, …, Pn-1]
+
+P0
+F = [P0, P1, P2, P3,P4]
+
+–  i  [1, n-2]:
+• Stel 3-hoek Fi = [P0, Pi, Pi+1] op
+
+– Resultaat = {F1,…, Fn-2}
+
+F1= [P0, P1, P2]
+F2= [P0, P2, P3]
+F3= [P0, P3, P4]
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+4
+
+Voorbereidingen voor het Z-Buffer algoritme
+2. Bereken de Image grootte
+– Het Z-Buffer algoritme werkt op een
+EasyImage en een ZBuffer van
+de correcte grootte:
+
+Imagey
+
+•
+
+•
+
+Imagex
+yrange
+
+• Zie cursus p.7
+xrange
+
+– Hiervoor zijn de geprojecteerde
+punten nodig.
+• Reeds geïmplementeerd:
+– Lines2D doProjection(const Figures3D &);
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+5
+
+Voorbereidingen voor het Z-Buffer algoritme
+3. Bereken de afstand van het projectievlak tot de oorsprong
+– Projectie:
+– 3D Lijntekeningen:
+• Eerst projecteren met d=1
+• Daarna herschalen
+
+– Z-Buffering: kies d zodat de figuur ineens correct geschaald is
+• Wat is de waarde van d ?
+•
+– Dit is de schaalfactor die bij het tekenen van 2D Lijntekeningen
+wordt gebruikt !!
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+6
+
+Voorbereidingen voor het Z-Buffer algoritme
+4. Bereken de offsets dx en dy
+– Om de afbeelding correct op de
+image te centreren zijn heeft het ZBuffer algoritme de waardes ‘dx’ en
+‘dy’ nodig.
+– Hoe deze waardes berekend worden
+vindt je in de cursus (pagina 8) en in
+de slides van de opdracht 2DLijntekeningen.
+
+dy
+
+dx
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+7
+
+Het Z-Buffer algoritme
+• Het Z-Buffer algoritme zélf wordt driehoek per driehoek
+toegepast
+– Vb: void draw_zbuf_triag(ZBuffer&, img::EasyImage&,
+Vector3D const& A,
+Vector3D const& B,
+Vector3D const& C,
+
+De ongeprojecteerde
+punten van de 3-hoek
+
+double d,
+
+De afstand tot het projectievlak
+
+double dx,
+double dy,
+
+De pixel ‘offsets’
+
+Color color);
+
+– Door deze functie op elke driehoek (Face) in de lijst van figuren
+(Figures3D) toe te passen kan de image worden opgesteld.
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+8
+
+Toepassen van Z-Buffering met driehoeken
+• Het Z-Buffer algoritme zelf:
+– Implementatie van void draw_zbuf_triag(…);
+– Drie belangrijke facetten:
+• Projecteren van de driehoek
+• Bepalen welke pixels tot de driehoek behoren
+• De 1/z waarde voor elke pixel berekenen
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+9
+
+Het Z-Buffer algoritme
+• Projectie van de driehoek ABC
+– Originele 3-hoek: ABC
+•
+•
+•
+
+– Geprojecteerde 3-hoek; A’B’C’
+•
+,
+•
+• Let op: deze coördinaten mogen niet worden afgerond !
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+10
+
+Het Z-Buffer algoritme
+• Bepalen van de pixels die tot de 3-hoek A’B’C’ behoren
+– Bepaal ymin, ymax
+
+Y=ymax
+
+• Zie cursus p.39
+• Dit zijn int’s.
+
+–  yi  [ymin,ymax]
+
+xL
+
+• Bepaal xL, xR
+• Zie cursus p. 39 – 41
+• Enkel xL en xR zijn int’s.
+De waarden die je nodig hebt
+om deze te bekomen
+zijn allemaal double’s.
+
+xR
+
+Y=yi
+
+– Let op met afronden !!
+Y=ymin
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+11
+
+Het Z-Buffer algoritme
+• Berekenen van de 1/z waardes
+– Coördinaten van het zwaartepunt van A’B’C’:
+•
+
+,
+
+•
+
+xG en yG worden
+berekend op basis
+van de geprojecteerde
+coördinaten.
+1/zG wordt
+berekend op basis
+van de originele
+coördinaten.
+
+–  pixel (x,y)  3-hoek A’B’C’:
+•
+• In deze formule zijn enkel x en y int’s.
+Alle overige waarden zijn double’s.
+• Berekening van dzdx, dzdy:
+– Zie cursus p. 41 - 43
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+12
+
+Het Z-Buffer algoritme
+• Typische fouten bij het implementeren van Z-Buffering
+– Verkeerd afronden bij het bereken van ymin, ymax, xL, xR
+
+Verwachte output
+
+Output bij verkeerd afronden
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+13
+
+Het Z-Buffer algoritme
+• Typische fouten bij het implementeren van Z-Buffering
+– Verkeerde d-waarde bij berekenen van dzdx en dzdy
+
+Verwachte output
+
+Output met verkeerde d-waarde
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+14
+
+Z-Buffering met driehoeken
+• Tips
+– Zorg er eerst voor dat je engine driehoeken correct kan inkleuren.
+Eens dat werkt kun je het berekenen van de 1/z waardes
+inbouwen.
+– Let op bij het afronden van reële waardes. Een double naar een
+int casten is geen correcte afronding. De correcte manier van
+afronden staat beschreven in de intro slides.
+
+– Test je Z-Buffer implementatie goed uit. Bepaalde typische fouten
+hebben op dit moment geen grote invloed maar zorgen bij
+volgende opdrachten gegarandeerd voor problemen !!
+
+Practicum Computer Graphics: Z-Buffering met driehoeken
+
+15
+
+

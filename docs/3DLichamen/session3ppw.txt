@@ -1,0 +1,292 @@
+Opdracht 3D Figuren
+Tim Apers
+
+3D Figuren
+• Implementeer functies om onderstaande 3D Figuren te
+genereren
+– Platonische lichamen
+• Kubus
+• Tetrahedron
+• Octahedron
+• Icosahedron
+• Dodecahedron
+
+– Cilinder
+– Kegel
+– Bol
+– Torus
+
+Practicum Computer Graphics: 3D Figuren
+
+2
+
+Datastructuur
+• Gebruik voor deze opgaven de datastructuren die je voor
+de opdracht 3D Lijntekeningen hebt gebruikt.
+– Er werd reeds gezegd dat 3D figuren uit vlakken en niet uit lijnen
+bestaan, dus moet deze structuur normaliter niet worden
+aangepast:
+class Face
+{
+public:
+//De indexen refereren naar
+//punten in de ‘points’ vector
+//van de Figure-klasse
+std::vector<int> point_indexes;
+};
+
+class Figure
+{
+public:
+Color color;
+std::vector<Vector3D> points;
+std::vector<Face> faces;
+};
+
+typedef std::list<Figure> Figures3D;
+
+Practicum Computer Graphics: 3D Figuren
+
+3
+
+Genereren van 3D Figuren
+• Platonische lichamen
+– Specificatie staat in de cursus
+– Vb: Figure createTetrahedron();
+
+z
+P4
+
+P2
+
+• PointsT:
+P1
+
+P2
+
+P3
+
+P4
+
+y
+P3
+
+• FacesT:
+P1
+
+x
+
+– De punten van een vlak moeten, van de buitenkant
+van de figuur bekeken, in tegenwijzerzin worden
+opgegeven
+Practicum Computer Graphics: 3D Figuren
+
+4
+
+Genereren van 3D Figuren
+• Genereren van een Bol
+– Vb: Figure createSphere(const double radius,
+
+const int n);
+
+1. Genereer een icosahedron
+2. Deel elke driehoek op
+in kleinere driehoeken
+3. Herhaal stap 2 in totaal ‘n’ keer
+4. Herschaal alle punten:
+•
+•
+– r: afstand tot de oorsprong
+• Nieuw punt:
+• Tip:
+– Vector3D::length()
+– Vector3D::normalise()
+Practicum Computer Graphics: 3D Figuren
+
+5
+
+Genereren van 3D Figuren
+• Opdelen van een driehoek
+– Begin met de driehoek ABC
+•
+•
+•
+
+– Bereken de punten D, E, F
+•
+•
+
+,
+
+– Vervang de driehoek ABC
+door de driehoeken
+• ADE
+• BFD
+• CEF
+• DFE
+Practicum Computer Graphics: 3D Figuren
+
+6
+
+Genereren van 3D Figuren
+• Genereren van een kegel
+– Vb: Figure createCone(const int n,
+
+Z
+
+const double h);
+
+– Eigenschappen
+• Straal r (r=1)
+• Hoogte h
+
+h
+
+– Een kegel wordt gegenereerd
+• Rond de Z-as
+• Grondvlak in het XY-vlak
+• Top in punt (0,0,h)
+
+r
+
+Y
+
+X
+
+Practicum Computer Graphics: 3D Figuren
+
+7
+
+Genereren van 3D Figuren
+• Genereren van een kegel
+– n: het aantal zijdelingse vlakken
+waarmee de kegel wordt
+voorgesteld
+– Punten
+• n+1 punten
+•
+
+•
+
+– Oppervlakken
+• n+1 oppervlakken
+•
+
+•
+
+Practicum Computer Graphics: 3D Figuren
+
+8
+
+Genereren van 3D Figuren
+• Genereren van een Cilinder
+– Vb Figure createCylinder(const int n,
+
+const double h);
+
+Z
+
+– Eigenschappen
+• Straal r (r=1)
+• Hoogte h
+h
+
+– Een cilinder wordt gegenereerd
+• Rond de Z-as
+• Grondvlak in het XY-vlak
+• Bovenvlak in het “(X,Y,h)” vlak
+
+r
+
+Y
+
+X
+Practicum Computer Graphics: 3D Figuren
+
+9
+
+Genereren van 3D Figuren
+• Genereren van een Cilinder
+– Gebeurt gelijkaardig aan het genereren
+van een kegel
+– 2n punten
+• n voor het grondvlak
+• n voor het bovenvlak
+
+– Oppervlakken
+• Bovenvlak ipv. 1 enkel punt
+• Zijvlakken: vierhoeken ipv driehoeken
+• Geef de punten op in tegenwijzerzin !
+
+Practicum Computer Graphics: 3D Figuren
+
+10
+
+Genereren van 3D Figuren
+• Genereren van een Torus
+– Vb: Figure createTorus(
+
+const double r,
+const double R,
+const int n,
+const int m);
+
+– Eigenschappen
+• R: afstand van het 0-punt tot
+het centrum van de buis
+• r: de straal van de buis
+
+Z
+r
+R
+
+Y
+
+– Kan beschreven worden met
+een parametervergelijking:
+•
+•
+Practicum Computer Graphics: 3D Figuren
+
+11
+
+Genereren van 3D Figuren
+• Genereren van een Torus
+– n: Het aantal cirkels waarin de
+buis wordt onderverdeeld
+– m: Het aantal punten op elke
+cirkel
+– Punten:
+•
+
+•
+pi,j+1
+
+– Oppervlakken:
+
+pi,j
+
+pi+1,j+1
+pi+1,j
+
+•
+•
+
+Practicum Computer Graphics: 3D Figuren
+
+12
+
+3D Figuren
+• Tips
+– Zorg ervoor dat de punten van een vlak steeds in tegenwijzerzin
+worden opgegeven!!
+
+– De gegenereerde 3D figuren moeten, net zoals lijntekeningen,
+correct kunnen worden getransformeerd. Controleer dat je engine
+de transformaties correct toepast.
+
+Practicum Computer Graphics: 3D Figuren
+
+13
+
+

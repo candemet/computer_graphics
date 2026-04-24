@@ -1,0 +1,133 @@
+Computer Graphics: 3D Lijntekeningen
+Tim Apers
+
+3D Lijntekeningen (1 punt)
+1. Implementeer functies die de transformatiematrices genereren voor de schaling, rotatie om
+de x-as, rotatie om de y-as, rotatie om de z-as en translatie op basis van respectievelijk de
+schaalfactor, de hoek waarover geroteerd moet worden en de translatievector.
+De schaling is een transformatie die niet in de cursus wordt beschreven maar wél moet
+worden geı̈mplementeerd. Een schaling zal een 3D Figuur vergroten of verkleinen afhankelijk
+van een schaalfactor scale. Hierbij wordt voor de eenvoud aangenomen dat de 3D figuur
+rond de oorsprong van het assenstelsel gecentreerd is. De transformatiematrix voor deze
+transformatie wordt hieronder beschreven.
+
+
+scale
+0
+0
+0
+ 0
+scale
+0
+0
+
+S(scale) = 
+ 0
+0
+scale 0
+0
+0
+0
+1
+2. Implementeer een functie die de Eye-pointtransformatiematrix genereert op basis van de
+Eye-point coördinaten.
+3. Implementeer een functie die een punt projecteert volgens de perspectiefprojectie. Je kunt
+hierbij aannemen dat de punten al zijn omgezet naar het Eye-coördinaatsysteem.
+4. Breid, op basis van deze functionaliteit, je engine uit zodat deze 3D lijntekeningen ondersteunt.
+Voor deze opgave zul je gebruik moeten maken van matrices en vectoren om transformaties en
+punten voor te stellen. Hiervoor is een Matrix library voorzien op BlackBoard, in het archief
+vector.tar.gz. Je bent niet verplicht deze te gebruiken, je kunt ook gebruik maken van een
+zelfgeschreven library. Externe libraries mogen, zonder onze toestemming, niet worden gebruikt.
+
+Invoerformaat
+De General sectie bevat in het geval van een 3D lijntekening de volgende entries:
+• type (string): Dit veld (dat in alle configuratiebestanden aanwezig is) bevat in het geval
+van een 3D lijntekening de waarde ‘Wireframe’.
+• size (integer): De grootte van de afbeelding in de richting die de meeste pixels vereist.
+• eye (tuple van 3 doubles): Dit veld beval een tuple van 3 reële waarden die de cartesische
+coördinaten van het eye aangeven.
+• backgroundcolor (tuple van 3 doubles): De RGB waarden van de achtergrond voorstellen.
+De waarden liggen tussen 0 en 1.0.
+
+1
+
+• nrFigures (integer): Het aantal figuren die in de .ini-file beschreven worden.
+Naast de General sectie bevat het configuratiebestand van een 3D Lijntekening ook nog nrFigures
+secties met figuren, Figure0 t.e.m. Figure<nrFigures-1> genaamd. Deze secties bevatten de
+volgende velden:
+• type (string): Deze string specificeert het type van de 3D Figuur. Voor deze opgave zal
+dit altijd ‘LineDrawing’ zijn. In de toekomst moeten er ook andere 3D Figuren ondersteund
+worden en kan deze string dus een andere waarde aannemen.
+• scale (double): De factor waarmee de figuur moet geschaald worden. Deze transformatie
+moet eerst worden uitgevoerd.
+• rotateX (double): De hoek (in graden) waarover de figuur moet worden gedraaid om de
+x-as. Deze transformatie moet worden uitgevoerd na de schaling.
+• rotateY (double): De hoek (in graden) waarover de figuur moet worden gedraaid om de
+y-as. Deze transformatie moet worden uitgevoerd na de rotatie om de x-as.
+• rotateZ (double): De hoek (in graden) waarover de figuur moet worden gedraaid om de
+z-as. Deze transformatie moet worden uitgevoerd na de rotatie om de y-as.
+• center (tuple van 3 doubles): De cartesische coördinaten van het punt waarheen de figuur
+moet worden verplaatst. Deze transformatie moet als laatste worden uitgevoerd.
+• color (tuple van 3 doubles): De RGB waarden van de lijnen van de figuur. Elk van deze
+waarden ligt tussen 0 en 1.0 (inclusief).
+• nrPoints (integer): Het aantal punten in de figuur.
+• point0 t.e.m. point<nrPoints-1> (tuples van 3 doubles): De cartesische coördinaten van
+de punten van de figuur.
+• nrLines (integer): Het aantal lijnen in de figuur.
+• line0 t.e.m. line<nrLines - 1> (tuples van 2 integers): De indices van de begin- en
+eindpunten van de lijnen van de figuur. Een tuple (3, 5) betekent dat er een lijn getekend
+moet worden van point3 naar point5.
+Ter verduidelijking wordt hieronder een voorbeeld gegeven:
+[General]
+type = "Wireframe"
+size = 1000
+eye = (100, 75, 75);
+backgroundcolor = (0, 0, 0)
+nrFigures = 1
+[Figure0]
+type = "LineDrawing"
+rotateX = 0
+rotateY = 0
+rotateZ = 0
+scale = 1.0
+center = (0,0,0)
+color = (0.0, 1.0, 0.0)
+
+2
+
+nrPoints = 4
+point0 = (0.0, 0.0, 0.0)
+point1 = (1.0, 0.0, 0.0)
+point2 = (0.0, 1.0, 0.0)
+point3 = (0.0, 0.0, 1.0)
+nrLines = 3
+line0 = (0, 1)
+line1 = (0, 2)
+line2 = (0, 3)
+
+Integratie
+De volledige opdracht is cruciaal voor de rest van het project en moet volledig werken om komende
+opdrachten te kunnen evalueren.
+
+Tips
+• Stel éérst een datastructuur op waarmee je eenvoudig een ruimtelijke figuur kunt voorstellen.
+Hou hierbij rekening dat het, naar de volgende opdrachten toe, zéér interessant is om een
+figuur niet langer te beschouwen als een verzameling van punten en lijnen maar wel als een
+verzameling van punten en oppervlakken. Het grote verschil hierbij is dat een oppervlak
+(zoals een driehoek, vierkant of vijfhoek) wordt gedefiniëerd door méér dan twee punten.
+(Voor een voorbeeld datastructuur kun je de slides van het practicum raadplegen)
+• Om de Eye-transformatiematrix te genereren moet je de cartesische coördinaten (x, y, z)
+van het Eye omzetten naar de overeenkomende bolcoördinaten (r, θ, ϕ). Hiervoor kun je
+de vergelijkingen gebruiken die onderaan pagina 21 van de cursus te vinden zijn. Voor het
+berekenen van de inversie tangens en inverse cosinus functie kun je gebruik maken van de
+std::atan2 en std::acos functies. Hiervoor moet je wel de cmath header includen.
+• Het configuratiebestand bevat geen waarde voor d. Gebruik enkel voor deze oefening de
+standaardwaarde d = 1. Je code voor 2D-lijntekeningen zou de afbeelding al moeten schalen
+om binnen het venster te passen.
+• Op BlackBoard zijn massa’s voorbeeld ini-bestanden samen met de verwachte output te
+vinden. Gebruik deze om je engine mee te controleren. Verder kun je altijd zélf ini-bestanden
+opstellen om ook alle randgevallen te testen.
+
+3
+
+

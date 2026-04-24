@@ -18,8 +18,8 @@
 #include "easy_image.h"
 #include <algorithm>
 #include <assert.h>
-#include <math.h>
 #include <iostream>
+#include <math.h>
 #include <sstream>
 
 #ifndef le32toh

@@ -1,0 +1,358 @@
+//
+// Created by Can Demet on 04/04/2026.
+// niet meer alles in engine.cc zetten
+//
+#include "geometry3d.h"
+
+Figure createCube() {
+    Figure cube;
+    cube.points = {
+        Vector3D::point( 1, -1, -1),
+        Vector3D::point(-1,  1, -1),
+        Vector3D::point( 1,  1,  1),
+        Vector3D::point(-1, -1,  1),
+        Vector3D::point( 1,  1, -1),
+        Vector3D::point(-1, -1, -1),
+        Vector3D::point( 1, -1,  1),
+        Vector3D::point(-1,  1,  1)
+    };
+
+
+    cube.faces = {
+        Face{{0, 4, 2, 6}},
+        Face{{4, 1, 7, 2}},
+        Face{{1, 5, 3, 7}},
+        Face{{5, 0, 6, 3}},
+        Face{{6, 2, 7, 3}},
+        Face{{0, 5, 1, 4}}
+    };
+    return cube;
+}
+
+Figure createTetrahedron() {
+    Figure tetra;
+
+    tetra.points = {
+        Vector3D::point(1, -1, -1),
+        Vector3D::point(-1, 1, -1),
+        Vector3D::point(1, 1, 1),
+        Vector3D::point(-1, -1, 1)
+    };
+
+    tetra.faces = {
+        Face{{0, 1, 2}},
+        Face{{1, 3, 2}},
+        Face{{0, 3, 1}},
+        Face{{0, 2, 3}}
+    };
+    return tetra;
+}
+
+Figure createOctahedron() {
+    Figure octa;
+    octa.points = {
+        Vector3D::point(1, 0,   0),
+        Vector3D::point(-1, 0,  0),
+        Vector3D::point(0, -1, 0),
+        Vector3D::point(0, 1,  0),
+        Vector3D::point(0, 0,   1),
+        Vector3D::point(0, 0,   -1)
+    };
+
+    octa.faces = {
+        Face{{3, 0, 4}},
+        Face{{1, 3, 4}},
+        Face{{2, 1, 4}},
+        Face{{0, 2, 4}},
+        Face{{2, 0, 5}},
+        Face{{1, 2, 5}},
+        Face{{3, 1, 5}},
+        Face{{0, 3, 5}},
+    };
+
+    return octa;
+}
+
+Figure createIcosahedron() {
+    Figure Icosahedron;
+
+    const double PI = std::acos(-1.0);
+
+    Icosahedron.points = {
+        Vector3D::point(0, 0, std::sqrt(5.0) / 2.0),
+        Vector3D::point(std::cos(0 * 2 * PI / 5), std::sin(0 * 2 * PI / 5), 0.5),
+        Vector3D::point(std::cos(1 * 2 * PI / 5), std::sin(1 * 2 * PI / 5), 0.5),
+        Vector3D::point(std::cos(2 * 2 * PI / 5), std::sin(2 * 2 * PI / 5), 0.5),
+        Vector3D::point(std::cos(3 * 2 * PI / 5), std::sin(3 * 2 * PI / 5), 0.5),
+        Vector3D::point(std::cos(4 * 2 * PI / 5), std::sin(4 * 2 * PI / 5), 0.5),
+        Vector3D::point(std::cos(PI / 5 + 0 * 2 * PI / 5), std::sin(PI / 5 + 0 * 2 * PI / 5), -0.5),
+        Vector3D::point(std::cos(PI / 5 + 1 * 2 * PI / 5), std::sin(PI / 5 + 1 * 2 * PI / 5), -0.5),
+        Vector3D::point(std::cos(PI / 5 + 2 * 2 * PI / 5), std::sin(PI / 5 + 2 * 2 * PI / 5), -0.5),
+        Vector3D::point(std::cos(PI / 5 + 3 * 2 * PI / 5), std::sin(PI / 5 + 3 * 2 * PI / 5), -0.5),
+        Vector3D::point(std::cos(PI / 5 + 4 * 2 * PI / 5), std::sin(PI / 5 + 4 * 2 * PI / 5), -0.5),
+        Vector3D::point(0, 0, -std::sqrt(5.0) / 2.0)
+    };
+
+    Icosahedron.faces = {
+        Face{{0, 1, 2}},
+        Face{{0, 2, 3}},
+        Face{{0, 3, 4}},
+        Face{{0, 4, 5}},
+        Face{{0, 5, 1}},
+        Face{{1, 6, 2}},
+        Face{{2, 6, 7}},
+        Face{{2, 7, 3}},
+        Face{{3, 7, 8}},
+        Face{{3, 8, 4}},
+        Face{{4, 8, 9}},
+        Face{{4, 9, 5}},
+        Face{{5, 9, 10}},
+        Face{{5, 10, 1}},
+        Face{{1, 10, 6}},
+        Face{{11, 7, 6}},
+        Face{{11, 8, 7}},
+        Face{{11, 9, 8}},
+        Face{{11, 10, 9}},
+        Face{{11, 6, 10}}
+    };
+
+    return Icosahedron;
+}
+
+Figure createDodecahedron() {
+    Figure dodeca;
+
+    Figure icosa = createIcosahedron();
+
+    for (auto face : icosa.faces) {
+        Vector3D point;
+
+        point.x = (icosa.points[face.point_indexes[0]].x + icosa.points[face.point_indexes[1]].x + icosa.points[face.point_indexes[2]].x) / 3.0;
+        point.y = (icosa.points[face.point_indexes[0]].y + icosa.points[face.point_indexes[1]].y + icosa.points[face.point_indexes[2]].y) / 3.0;
+        point.z = (icosa.points[face.point_indexes[0]].z + icosa.points[face.point_indexes[1]].z + icosa.points[face.point_indexes[2]].z) / 3.0;
+
+        dodeca.points.push_back(point);
+    }
+
+    dodeca.faces = {
+        Face{{0, 1, 2, 3, 4}},
+        Face{{0, 5, 6, 7, 1}},
+        Face{{1, 7, 8, 9, 2}},
+        Face{{2, 9, 10, 11, 3}},
+        Face{{3, 11, 12, 13, 4}},
+        Face{{4, 13, 14, 5, 0}},
+        Face{{19, 18, 17, 16, 15}},
+        Face{{19, 14, 13, 12, 18}},
+        Face{{18, 12, 11, 10, 17}},
+        Face{{17, 10, 9, 8, 16}},
+        Face{{16, 8, 7, 6, 15}},
+        Face{{15, 6, 5, 14, 19}}
+    };
+
+    return dodeca;
+}
+
+const double PI = std::acos(-1.0);
+
+Figure createCone(int n, double height) {
+    Figure cone;
+
+    // minstens 3
+    if (n < 3) {
+        return cone;
+    }
+
+    //const double PI = std::acos(-1.0);
+
+    // Basis
+    for (int i = 0; i < n; i++) {
+        double angle = 2.0 * PI * i / n;
+        Vector3D point = Vector3D::point(std::cos(angle), std::sin(angle), 0);
+        cone.points.push_back(point);
+    }
+
+    // Top
+    Vector3D top = Vector3D::point(0, 0, height);
+    cone.points.push_back(top);
+
+    // Zijkant
+    for (int i = 0; i < n; i++) {
+        std::vector<int> triangleFace;
+        triangleFace.push_back(i);
+        triangleFace.push_back((i + 1) % n);
+        triangleFace.push_back(n);
+        cone.faces.push_back(Face{triangleFace});
+    }
+
+    // Bottom
+    std::vector<int> bottomFace;
+    for (int i = n - 1; i >= 0; i--) {
+        bottomFace.push_back(i);
+    }
+    cone.faces.push_back(Face{bottomFace});
+
+    return cone;
+}
+
+Figure createCylinder(int n, double height) {
+    Figure cyl;
+
+    for (int i = 0; i < n; i++) {
+        double angle = 2.0 * PI * i / n;
+        Vector3D point = Vector3D::point(std::cos(angle), std::sin(angle), 0);
+        cyl.points.push_back(point);
+    }
+
+    for (int i = 0; i < n; i++) {
+        double angle = 2.0 * PI * i / n;
+        Vector3D point = Vector3D::point(std::cos(angle), std::sin(angle), height);
+        cyl.points.push_back(point);
+    }
+
+    std::vector<int> topFace;
+    for (int i = n; i < 2 * n; i++) {
+        topFace.push_back(i);
+    }
+    cyl.faces.push_back(Face{topFace});
+
+    std::vector<int> bottomFace;
+    for (int i = n - 1; i >= 0; i--) {
+        bottomFace.push_back(i);
+    }
+    cyl.faces.push_back(Face{bottomFace});
+
+    for (int i = 0; i < n; i++) {
+        std::vector<int> triangleFace;
+        triangleFace.push_back(i);
+        triangleFace.push_back((i + 1) % n);
+        triangleFace.push_back( n + (i + 1) % n);
+        triangleFace.push_back( n + i);
+        cyl.faces.push_back(Face{triangleFace});
+    }
+
+    return cyl;
+}
+
+Figure createSphere(const double radius, const int n) {
+    Figure sphere = createIcosahedron();
+
+    // Steps 2 & 3: Subdivide 'n' times (Flat subdivision)
+    for (int i = 0; i < n; ++i) {
+        std::vector<Face> newFaces;
+        newFaces.reserve(sphere.faces.size() * 4);
+
+        for (const auto &face : sphere.faces) {
+            int idx0 = face.point_indexes[0];
+            int idx1 = face.point_indexes[1];
+            int idx2 = face.point_indexes[2];
+
+            // Calculate midpoints (Do NOT normalise here to match the slide)
+            Vector3D mpoint1 = (sphere.points[idx0] + sphere.points[idx1]) * 0.5;
+            Vector3D mpoint2 = (sphere.points[idx1] + sphere.points[idx2]) * 0.5;
+            Vector3D mpoint3 = (sphere.points[idx2] + sphere.points[idx0]) * 0.5;
+
+            int midIdx1 = static_cast<int>(sphere.points.size());
+            sphere.points.push_back(mpoint1);
+            int midIdx2 = static_cast<int>(sphere.points.size());
+            sphere.points.push_back(mpoint2);
+            int midIdx3 = static_cast<int>(sphere.points.size());
+            sphere.points.push_back(mpoint3);
+
+            newFaces.push_back(Face{{idx0, midIdx1, midIdx3}});
+            newFaces.push_back(Face{{midIdx1, idx1, midIdx2}});
+            newFaces.push_back(Face{{midIdx3, midIdx2, idx2}});
+            newFaces.push_back(Face{{midIdx1, midIdx2, midIdx3}});
+        }
+        sphere.faces = newFaces;
+    }
+
+    // Step 4: Rescale ALL points
+    for (auto &point : sphere.points) {
+        point.normalise(); // Projects the flat subdivided grid onto the unit sphere
+        point *= radius;   // Scales to the final requested radius
+    }
+
+    return sphere;
+}
+
+// Figure createSphere(const double radius, const int n) {
+//     Figure sphere = createIcosahedron();
+//
+//     for (auto &point : sphere.points) {
+//         point.normalise();
+//     }
+//
+//     for (int i = 0; i < n; ++i) {
+//         std::vector<Face> newFaces;
+//         newFaces.reserve(sphere.faces.size() * 4);
+//
+//         for (const auto &face : sphere.faces) {
+//             int idx0 = face.point_indexes[0];
+//             int idx1 = face.point_indexes[1];
+//             int idx2 = face.point_indexes[2];
+//
+//             Vector3D mpoint1 = (sphere.points[idx0] + sphere.points[idx1]) * 0.5;
+//             Vector3D mpoint2 = (sphere.points[idx1] + sphere.points[idx2]) * 0.5;
+//             Vector3D mpoint3 = (sphere.points[idx2] + sphere.points[idx0]) * 0.5;
+//
+//             mpoint1.normalise();
+//             mpoint2.normalise();
+//             mpoint3.normalise();
+//
+//             int midIdx1 = static_cast<int>(sphere.points.size());
+//             sphere.points.push_back(mpoint1);
+//             int midIdx2 = static_cast<int>(sphere.points.size());
+//             sphere.points.push_back(mpoint2);
+//             int midIdx3 = static_cast<int>(sphere.points.size());
+//             sphere.points.push_back(mpoint3);
+//
+//             newFaces.push_back(Face{{idx0, midIdx1, midIdx3}});
+//             newFaces.push_back(Face{{midIdx1, idx1, midIdx2}});
+//             newFaces.push_back(Face{{midIdx3, midIdx2, idx2}});
+//             newFaces.push_back(Face{{midIdx1, midIdx2, midIdx3}});
+//         }
+//         sphere.faces = newFaces;
+//     }
+//
+//     for (auto &point : sphere.points) {
+//         point *= radius;
+//     }
+//
+//     return sphere;
+// }
+
+
+Figure createTorus(double r, double R, int n, int m) {
+    Figure torus;
+    if (n < 3) return torus;
+
+    for (int i = 0; i < n; i++) {
+        const double u = 2.0 * PI * i / n;
+        const double cu = std::cos(u);
+        const double su = std::sin(u);
+
+        for (int j = 0; j < m; j++) {
+            const double v = 2.0 * PI * j / m;
+            const double cv = std::cos(v);
+            const double sv = std::sin(v);
+
+            const double x = (r * cv + R) * cu;
+            const double y = (r * cv + R) * su;
+            const double z = r * sv;
+
+            torus.points.push_back(Vector3D::point(x, y, z));
+        }
+    }
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            int idx0 = i * m + j;
+            int idx1 = ((i + 1) % n) * m + j;
+            int idx2 = ((i + 1) % n) * m + ((j + 1) % m);
+            int idx3 = i * m + ((j + 1) % m);
+
+            torus.faces.push_back(Face{{idx0, idx1, idx2, idx3}});
+        }
+    }
+    return torus;
+}

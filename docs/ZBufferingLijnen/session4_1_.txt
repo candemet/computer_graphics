@@ -1,0 +1,146 @@
+Opdracht Z-buffering met lijnen
+Tim Apers
+     Z-Buffering met lijnen
+
+• Opdracht: breid je engine uit met de nodige functionaliteit
+  om Z-buffering met lijnen toe te passen:
+        Z
+
+                             Genereren van
+                             3D Figuren
+                 Y
+                                                 ini::Configuration
+     X Figures3D
+
+       Transformaties
+       & Projectie                                                        Y
+
+       Y                                              Z-coördinaten ?
+                                   Y
+
+                                                      draw_zbuf_line(…);
+                                                       EasyImage::
+                                                         draw_line(…);
+                                                                                                   X
+             X       Omzetten naar
+                     pixel-coördinaten              X                         img::EasyImage
+
+   Lines2D
+                                             Practicum Computer Graphics: Z-Buffering met lijnen   2
+    Datastructuren
+
+• Pas de bestaande datastructuren aan om Z-Buffering met
+  lijnen te ondersteunen:
+  – Voor Z-buffering met lijnen zijn de originele Z-coördinaten van de
+    geprojecteerde punten nodig. Deze moeten dus mee worden
+    opgeslagen in het Line2D Object:
+
+   class Line2D {
+    public:
+      Point2D p1;
+      Point2D p2;
+      Color color;
+   };
+      double z1;                     Deze velden moeten worden
+      double z2;                     ingevuld tijdens het projecteren
+   };
+
+    typedef std::list<Line2D> Lines2D;
+
+
+
+
+                                      Practicum Computer Graphics: Z-Buffering met lijnen   3
+     Datastructuren
+
+• Maak een datastructuur aan om de ‘ZBuffer’ in bij te
+  houden:
+   – De Z-buffer houdt voor elke pixel de kleinste 1/z waarde bij
+   – Voor elke pixel wordt de 1/z waarde op +∞ geïnitialiseerd
+   – Stel zelf een zinvolle datastructuur op, of baseer je op de gegeven
+     datastructuur
+      • De gegeven code dient enkel als voorbeeld. Het kan nuttig zijn om,
+        daar waar nodig, de nodige abstracties in te voeren
+
+    class ZBuffer: public std::vector<std::vector<double> >
+    {
+       public:
+        //Constructor: maakt een Z-Buffer van de correcte
+        //grootte aan en initialiseert alle velden op +inf
+        ZBuffer(const int width, const int height);
+    };
+
+
+
+
+                                        Practicum Computer Graphics: Z-Buffering met lijnen   4
+   Datastructuren
+
+• Z-buffer voorbeeld
+
+
+
+
+    Gerenderde afbeelding                  Inhoud van de Z-buffer
+
+
+
+
+                            Practicum Computer Graphics: Z-Buffering met lijnen   5
+     Toepassen van Z-Buffering met lijnen
+
+• Huidige line-drawing implementatie gebruikt:
+   – void img::EasyImage::draw_line(
+            const unsigned int x0, const unsigned int y0,
+            const unsigned int x1, const unsigned int y1,
+            const Color &color);
+
+
+• Gebruik voor ZBuffering met lijnen:
+   – void draw_zbuf_line(
+            Zbuffer &,
+            img::EasyImage &,
+            const unsigned int x0, const unsigned int y0,
+            const double z0,
+            const unsigned int x1, const unsigned int y1,
+            const double z1,
+            const Color &color);
+
+
+
+
+                                Practicum Computer Graphics: Z-Buffering met lijnen   6
+     Toepassen van Z-buffering met lijnen
+
+• Het Z-buffer algoritme zelf:
+   – Implementatie van void draw_zbuf_line(…);
+
+   – Welke pixels liggen op de te tekenen lijn ?
+      • Reeds geïmplementeerd:
+         – void img::EasyImage::draw_line(…);
+
+   – Wat is de 1/z waarde van de te tekenen pixels ?
+      • Zie cursus pagina 35
+
+
+
+
+                                       Practicum Computer Graphics: Z-Buffering met lijnen   7
+    Z-buffering met lijnen
+
+• Tips:
+
+  – De verschillende elementen van je Zbuffer moeten op +∞ worden
+    geïnitialiseerd. Deze waarde kan door een double worden
+    voorgesteld. Om deze waarde op te vragen kun je gebruik maken
+    van onderstaande code.
+          double posInf = std::numeric_limits<double>::infinity();
+          double negInf = -std::numeric_limits<double>::infinity();
+
+    Je moet hiervoor wel de <limits> header includen.
+
+
+
+
+                                     Practicum Computer Graphics: Z-Buffering met lijnen   8
+

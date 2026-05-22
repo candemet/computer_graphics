@@ -78,5 +78,6 @@ Figures3D generateFractal(Figure& fig, const int nrIterations, const double scal
 Figure createBuckyBall();
 Figure createMengerSponge(int nrIterations);
 
+Figures3D thickenWireframe(const Figure& wire, double radius, int n, int m);
 
 #endif //ENGINE_GEOMETRY3D_H

@@ -5,11 +5,16 @@
 #include "geometry3d.h"
 #include <map>
 #include <utility>
+#include <set>
 
 // snelle forward declaration, zou best in aparte header moeten TODO
 Matrix scaleFigure(double scale);
 Matrix translate(const Vector3D& vector);
 void applyTransformation(Figure& figure, const Matrix& m);
+Matrix rotateY(double angle);
+Matrix rotateZ(double angle);
+
+
 
 Figure createCube() {
     Figure cube;
@@ -414,4 +419,69 @@ Figure createMengerSponge(int nrIterations) {
     Figure sponge;
     addMengerRecursive(sponge, Vector3D::point(0,0,0), 2.0, nrIterations);
     return sponge;
+}
+
+// bollen & cylinders
+static Matrix orientPlusZTo(const Vector3D& dirIn) {
+    Vector3D d = dirIn;
+    d.normalise();
+    double phi   = std::acos(std::clamp(d.z, -1.0, 1.0));  // polar angle from +z
+    double theta = std::atan2(d.y, d.x);
+
+    return rotateY(phi * 180.0 / M_PI) * rotateZ(theta * 180.0 / M_PI);
+}
+
+Figures3D thickenWireframe(const Figure &wire, double radius, int n, int m) {
+    Figures3D out;
+
+    std::set<std::pair<int, int>> edges;
+    for (const auto& f : wire.faces) {
+        const auto& idx = f.point_indexes;
+        if (idx.size() == 2) {
+            edges.insert({std::min(idx[0], idx[1]), std::max(idx[0], idx[1])});
+        } else {
+            for (size_t i = 0; i < idx.size(); ++i) {
+                int a = idx[i];
+                int b = idx[(i + 1) %idx.size()];
+                edges.insert({std::min(a, b), std::max(a, b)});
+            }
+        }
+    }
+
+    // copy materialen
+    auto copyM = [&](Figure& f) {
+        f.color                 = wire.color;
+        f.ambientReflection     = wire.ambientReflection;
+        f.diffuseReflection     = wire.diffuseReflection;
+        f.specularReflection    = wire.specularReflection;
+        f.reflectionCoefficient = wire.reflectionCoefficient;
+    };
+
+    for (auto& e : edges) {
+        int a = e.first;
+        int b = e.second;
+
+        const Vector3D& pa = wire.points[a];
+        const Vector3D& pb = wire.points[b];
+        Vector3D dir = pb - pa;
+        double len = dir.length();
+
+        if (len < 1e-9) continue;
+
+        Figure cyl = createCylinder(n, len / radius);
+        copyM(cyl);
+
+        Matrix M = scaleFigure(radius) * orientPlusZTo(dir) * translate(pa);
+        applyTransformation(cyl, M);
+        out.push_back(std::move(cyl));
+    }
+
+    for (const auto& p : wire.points) {
+        Figure sph = createSphere(radius, m);
+        copyM(sph);
+        applyTransformation(sph, translate(p));
+        out.push_back(std::move(sph));
+    }
+
+    return out;
 }

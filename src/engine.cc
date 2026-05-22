@@ -1,8 +1,8 @@
+#include "geometry3d.h"
 #include "l_parser/l_parser.h"
 #include "utils/easy_image.h"
 #include "utils/ini_configuration.h"
 #include "utils/vector3d.h"
-#include "geometry3d.h"
 #include "zbuffer.h"
 
 #include <algorithm>
@@ -13,7 +13,6 @@
 #include <stack>
 #include <stdexcept>
 #include <string>
-
 
 
 // struct Color {
@@ -45,8 +44,10 @@ typedef std::list<Line2D> Lines2D;
 
 // beter afronden voor kleuren
 static int rounder(double v) {
-    if (v < 0.0) v = 0.0;
-    if (v > 1.0) v = 1.0;
+    if (v < 0.0)
+        v = 0.0;
+    if (v > 1.0)
+        v = 1.0;
     return static_cast<int>(lround(v * 255.0));
 }
 
@@ -75,7 +76,7 @@ std::list<double> min_max_finder(const Lines2D &lines) {
     return values;
 }
 
-img::EasyImage draw2DLines(const Lines2D &lines, const int size, const img::Color& color) {
+img::EasyImage draw2DLines(const Lines2D &lines, const int size, const img::Color &color) {
     if (lines.empty()) {
         return img::EasyImage();
     }
@@ -126,33 +127,27 @@ img::EasyImage draw2DLines(const Lines2D &lines, const int size, const img::Colo
     int w = static_cast<int>(width);
     int h = static_cast<int>(height);
 
-    for (auto& line: lines) {
+    for (auto &line: lines) {
         int x0 = static_cast<int>(std::lround(line.p1.x * d + dx));
         int y0 = static_cast<int>(std::lround(line.p1.y * d + dy));
         int x1 = static_cast<int>(std::lround(line.p2.x * d + dx));
         int y1 = static_cast<int>(std::lround(line.p2.y * d + dy));
 
-        if ((x0 < 0 && x1 < 0) || (x0 >= w && x1 >= w) ||
-            (y0 < 0 && y1 < 0) || (y0 >= h && y1 >= h)) {
+        if ((x0 < 0 && x1 < 0) || (x0 >= w && x1 >= w) || (y0 < 0 && y1 < 0) || (y0 >= h && y1 >= h)) {
             continue;
         }
 
 
-        image.draw_line(
-        static_cast<unsigned int>(x0),
-        static_cast<unsigned int>(y0),
-        static_cast<unsigned int>(x1),
-        static_cast<unsigned int>(y1),
-        line.color
-        );
+        image.draw_line(static_cast<unsigned int>(x0), static_cast<unsigned int>(y0), static_cast<unsigned int>(x1),
+                        static_cast<unsigned int>(y1), line.color);
     }
     return image;
 }
 
 // helper funtion for generate LSystem2D
-void draw_recursive(const LParser::LSystem2D& system, char c, unsigned int depth,
-    double& x, double& y, double& angle, double angle_incr, Lines2D& lines, img::Color color,
-    std::stack<std::tuple<double, double, double>>& stateStack) {
+void draw_recursive(const LParser::LSystem2D &system, char c, unsigned int depth, double &x, double &y, double &angle,
+                    double angle_incr, Lines2D &lines, img::Color color,
+                    std::stack<std::tuple<double, double, double>> &stateStack) {
 
     if (depth == 0) {
         double newX = x + cos(angle);
@@ -164,33 +159,29 @@ void draw_recursive(const LParser::LSystem2D& system, char c, unsigned int depth
         x = newX;
         y = newY;
     } else {
-        for (char ch : system.get_replacement(c)) {
+        for (char ch: system.get_replacement(c)) {
             if (ch == '+') {
                 angle += angle_incr;
-            }
-            else if (ch == '-') {
+            } else if (ch == '-') {
                 angle -= angle_incr;
-            }
-            else if (ch == '(') {
+            } else if (ch == '(') {
                 stateStack.push(std::make_tuple(x, y, angle));
-            }
-            else if (ch == ')') {
+            } else if (ch == ')') {
                 x = std::get<0>(stateStack.top());
                 y = std::get<1>(stateStack.top());
                 angle = std::get<2>(stateStack.top());
                 stateStack.pop();
-            }
-            else {
+            } else {
                 draw_recursive(system, ch, depth - 1, x, y, angle, angle_incr, lines, color, stateStack);
             }
         }
     }
 }
 
-Lines2D generate_LSystem_2D(LParser::LSystem2D& lSystem, img::Color lineColor) {
+Lines2D generate_LSystem_2D(LParser::LSystem2D &lSystem, img::Color lineColor) {
     Lines2D lines;
 
-    //std::set<char> alphabet = lSystem.get_alphabet();
+    // std::set<char> alphabet = lSystem.get_alphabet();
 
     double angle_incr = lSystem.get_angle();
     double current_angle = lSystem.get_starting_angle();
@@ -209,20 +200,16 @@ Lines2D generate_LSystem_2D(LParser::LSystem2D& lSystem, img::Color lineColor) {
     for (char c: lSystem.get_initiator()) {
         if (c == '+') {
             current_angle_rad += angle_rad;
-        }
-        else if (c == '-') {
+        } else if (c == '-') {
             current_angle_rad -= angle_rad;
-        }
-        else if (c == '(') {
+        } else if (c == '(') {
             stateStack.push(std::make_tuple(x, y, current_angle_rad));
-        }
-        else if (c == ')') {
+        } else if (c == ')') {
             x = std::get<0>(stateStack.top());
             y = std::get<1>(stateStack.top());
             current_angle_rad = std::get<2>(stateStack.top());
             stateStack.pop();
-        }
-        else {
+        } else {
             draw_recursive(lSystem, c, nrIterations, x, y, current_angle_rad, angle_rad, lines, lineColor, stateStack);
         }
     }
@@ -256,10 +243,10 @@ Matrix rotateX(double angle) {
     const double s = std::sin(a);
 
     Matrix m;
-    m(2,2) = c;
-    m(2,3) = s;
-    m(3,2) = -s;
-    m(3,3) = c;
+    m(2, 2) = c;
+    m(2, 3) = s;
+    m(3, 2) = -s;
+    m(3, 3) = c;
     return m;
 }
 
@@ -269,10 +256,10 @@ Matrix rotateY(const double angle) {
     const double s = std::sin(a);
 
     Matrix m;
-    m(1,1) = c;
-    m(1,3) = -s;
-    m(3,1) = s;
-    m(3,3) = c;
+    m(1, 1) = c;
+    m(1, 3) = -s;
+    m(3, 1) = s;
+    m(3, 3) = c;
     return m;
 };
 
@@ -282,44 +269,41 @@ Matrix rotateZ(const double angle) {
     const double s = std::sin(a);
 
     Matrix m;
-    m(1,1) = c;
-    m(1,2) = s;
-    m(2,1) = -s;
-    m(2,2) = c;
+    m(1, 1) = c;
+    m(1, 2) = s;
+    m(2, 1) = -s;
+    m(2, 2) = c;
     return m;
 }
 
 Matrix translate(const Vector3D &vector) {
     Matrix m;
-    m(4,1) = vector.x;
-    m(4,2) = vector.y;
-    m(4,3) = vector.z;
+    m(4, 1) = vector.x;
+    m(4, 2) = vector.y;
+    m(4, 3) = vector.z;
     return m;
 }
 
-Matrix figureTransform(const double scale,
-                       const double rotX,
-                       const double rotY,
-                       const double rotZ,
+Matrix figureTransform(const double scale, const double rotX, const double rotY, const double rotZ,
                        const Vector3D &center) {
     // Volgorde: scale -> Rx -> Ry -> Rz -> translate
     return scaleFigure(scale) * rotateX(rotX) * rotateY(rotY) * rotateZ(rotZ) * translate(center);
 }
 
 void applyTransformation(Figure &figure, const Matrix &matrix) {
-    for (Vector3D &point : figure.points) {
+    for (Vector3D &point: figure.points) {
         point *= matrix;
     }
 }
 
 void applyTransformation(Figures3D &figures, const Matrix &matrix) {
-    for (Figure &f : figures) {
+    for (Figure &f: figures) {
         applyTransformation(f, matrix);
     }
 }
 
-void applyTransformation(Lights3D& lights, const Matrix &matrix) {
-    for (auto& light : lights) {
+void applyTransformation(Lights3D &lights, const Matrix &matrix) {
+    for (auto &light: lights) {
         if (light.infinity) {
             light.direction *= matrix;
             light.direction.normalise();
@@ -345,21 +329,21 @@ Matrix eyePointTrans(const Vector3D &eyepoint) {
     toPolar(eyepoint, theta, phi, r);
 
     Matrix m;
-    m(1,1) = -std::sin(theta);
-    m(1,2) = -std::cos(theta) * std::cos(phi);
-    m(1,3) = std::cos(theta) * std::sin(phi);
+    m(1, 1) = -std::sin(theta);
+    m(1, 2) = -std::cos(theta) * std::cos(phi);
+    m(1, 3) = std::cos(theta) * std::sin(phi);
 
-    m(2,1) = std::cos(theta);
-    m(2,2) = -std::sin(theta) * std::cos(phi);
-    m(2,3) = std::sin(theta) * std::sin(phi);
+    m(2, 1) = std::cos(theta);
+    m(2, 2) = -std::sin(theta) * std::cos(phi);
+    m(2, 3) = std::sin(theta) * std::sin(phi);
 
-    m(3,1) = 0.0;
-    m(3,2) = std::sin(phi);
-    m(3,3) = std::cos(phi);
+    m(3, 1) = 0.0;
+    m(3, 2) = std::sin(phi);
+    m(3, 3) = std::cos(phi);
 
-    m(4,1) = 0.0;
-    m(4,2) = 0.0;
-    m(4,3) = -r;
+    m(4, 1) = 0.0;
+    m(4, 2) = 0.0;
+    m(4, 3) = -r;
     return m;
 }
 
@@ -367,34 +351,36 @@ Point2D doProjection(const Vector3D &point, const double d = 1.0) {
     return {d * point.x / (-point.z), d * point.y / (-point.z)};
 }
 
-Lines2D doProjection( const Figures3D &figs) {
+Lines2D doProjection(const Figures3D &figs) {
     Lines2D lines;
     double eps = 1e-9;
 
-    for (const Figure &fig :figs) {
-        for (const Face &face : fig.faces) {
-            if (face.point_indexes.size() < 2) continue;
+    for (const Figure &fig: figs) {
+        for (const Face &face: fig.faces) {
+            if (face.point_indexes.size() < 2)
+                continue;
 
             for (size_t i = 0; i < face.point_indexes.size(); i++) {
                 const int a = face.point_indexes[i];
                 const int b = face.point_indexes[(i + 1) % face.point_indexes.size()];
 
-                if ( a < 0 || b < 0) continue;
-                if ( a >= static_cast<int>(fig.points.size()) || b >= static_cast<int>(fig.points.size())) continue;
+                if (a < 0 || b < 0)
+                    continue;
+                if (a >= static_cast<int>(fig.points.size()) || b >= static_cast<int>(fig.points.size()))
+                    continue;
 
                 const Vector3D &pa = fig.points[a];
                 const Vector3D &pb = fig.points[b];
 
-                if (pa.z  > -eps || pb.z > -eps) continue;
+                if (pa.z > -eps || pb.z > -eps)
+                    continue;
 
                 // lines.push_back({doProjection(pa), doProjection(pb), fig.color, pa.z, pb.z});
-                img::Color lineCol(
-                static_cast<uint8_t>(rounder(fig.color.red)),
-                static_cast<uint8_t>(rounder(fig.color.green)),
-                static_cast<uint8_t>(rounder(fig.color.blue)));
+                img::Color lineCol(static_cast<uint8_t>(rounder(fig.color.red)),
+                                   static_cast<uint8_t>(rounder(fig.color.green)),
+                                   static_cast<uint8_t>(rounder(fig.color.blue)));
 
                 lines.push_back({doProjection(pa), doProjection(pb), lineCol, pa.z, pb.z});
-
             }
         }
     }
@@ -402,23 +388,17 @@ Lines2D doProjection( const Figures3D &figs) {
 }
 
 
-
 // static img::Color to_img_color(const ini::DoubleTuple &rgb01) {
 //     return img::Color(lround(rgb01[0] * 255.0), lround(rgb01[1] * 255.0), lround(rgb01[2] * 255.0));
 // }
 
 static img::Color to_img_color(const ini::DoubleTuple &rgb01) {
-    return {
-        static_cast<uint8_t>(rounder(rgb01[0])),
-        static_cast<uint8_t>(rounder(rgb01[1])),
-        static_cast<uint8_t>(rounder(rgb01[2]))
-    };
+    return {static_cast<uint8_t>(rounder(rgb01[0])), static_cast<uint8_t>(rounder(rgb01[1])),
+            static_cast<uint8_t>(rounder(rgb01[2]))};
 }
 
 // helper voor ColorD
-static ColorD to_colord(const ini::DoubleTuple &rgb01) {
-    return ColorD(rgb01[0], rgb01[1], rgb01[2]);
-}
+static ColorD to_colord(const ini::DoubleTuple &rgb01) { return ColorD(rgb01[0], rgb01[1], rgb01[2]); }
 
 static Vector3D tuple_to_point3d(const ini::DoubleTuple &tuple) {
     return Vector3D::point(tuple[0], tuple[1], tuple[2]);
@@ -430,7 +410,9 @@ static Vector3D tuple_to_vector3d(const ini::DoubleTuple &tuple) {
 
 Figure parseLineDrawingFigure(const ini::Configuration &configuration, const std::string &sectionName) {
     Figure figure;
-    figure.color = to_colord(configuration[sectionName]["color"].as_double_tuple_or_die());
+    if (configuration[sectionName]["color"].exists()) {
+        figure.color = to_colord(configuration[sectionName]["color"].as_double_tuple_or_die());
+    }
 
     // points
     const int nrPoints = configuration[sectionName]["nrPoints"].as_int_or_die();
@@ -452,26 +434,18 @@ Figure parseLineDrawingFigure(const ini::Configuration &configuration, const std
         figure.faces.push_back(f);
     }
 
-    // transformation
-    const double scale = configuration[sectionName]["scale"].as_double_or_die();
-    const double rotX = configuration[sectionName]["rotateX"].as_double_or_die();
-    const double rotY = configuration[sectionName]["rotateY"].as_double_or_die();
-    const double rotZ = configuration[sectionName]["rotateZ"].as_double_or_die();
-    const Vector3D centre = tuple_to_vector3d(configuration[sectionName]["center"].as_double_tuple_or_die());
-
-    Matrix m = figureTransform(scale, rotX, rotY, rotZ, centre);
-    applyTransformation(figure, m);
+    // transformation moet hier niet meer gedaan worden, anders doen we het dubbel
 
     return figure;
 }
 
-static std::string expandLSystem3D(const LParser::LSystem3D& system) {
+static std::string expandLSystem3D(const LParser::LSystem3D &system) {
     std::string current = system.get_initiator();
-    const auto& alphabet = system.get_alphabet();
+    const auto &alphabet = system.get_alphabet();
 
     for (unsigned int i = 0; i < system.get_nr_iterations(); ++i) {
         std::string next;
-        for (char c : current) {
+        for (char c: current) {
             if (alphabet.find(c) != alphabet.end()) {
                 next += system.get_replacement(c);
             } else {
@@ -492,7 +466,7 @@ struct Turtle3D {
 };
 
 // angle moet in rad zijn!
-static void rotateU(Turtle3D& turtle, double angle) {
+static void rotateU(Turtle3D &turtle, double angle) {
     const double c = std::cos(angle);
     const double s = std::sin(angle);
 
@@ -503,7 +477,7 @@ static void rotateU(Turtle3D& turtle, double angle) {
     turtle.L = oldL * c - oldH * s;
 }
 
-static void rotateL(Turtle3D& turtle, double angle) {
+static void rotateL(Turtle3D &turtle, double angle) {
     const double c = std::cos(angle);
     const double s = std::sin(angle);
 
@@ -514,7 +488,7 @@ static void rotateL(Turtle3D& turtle, double angle) {
     turtle.U = oldU * c - oldH * s;
 }
 
-static void rotateH(Turtle3D& turtle, double angle) {
+static void rotateH(Turtle3D &turtle, double angle) {
     const double c = std::cos(angle);
     const double s = std::sin(angle);
 
@@ -528,7 +502,10 @@ static void rotateH(Turtle3D& turtle, double angle) {
 
 Figure parse3DLSystemFigure(const ini::Configuration &configuration, const std::string &sectionName) {
     Figure figure;
-    figure.color = to_colord(configuration[sectionName]["color"].as_double_tuple_or_die());
+
+    if (configuration[sectionName]["color"].exists()) {
+        figure.color = to_colord(configuration[sectionName]["color"].as_double_tuple_or_die());
+    }
 
     const std::string inputfile = configuration[sectionName]["inputfile"].as_string_or_die();
     std::ifstream lFile(inputfile);
@@ -539,16 +516,12 @@ Figure parse3DLSystemFigure(const ini::Configuration &configuration, const std::
     const std::string expanded = expandLSystem3D(system);
     const double angle = system.get_angle() * M_PI / 180.0;
 
-    Turtle3D turtle{
-        Vector3D::point(0, 0, 0),
-        Vector3D::vector(1, 0, 0),
-        Vector3D::vector(0, 1, 0),
-        Vector3D::vector(0, 0, 1)
-    };
+    Turtle3D turtle{Vector3D::point(0, 0, 0), Vector3D::vector(1, 0, 0), Vector3D::vector(0, 1, 0),
+                    Vector3D::vector(0, 0, 1)};
 
     std::stack<Turtle3D> stack;
 
-    for (char c : expanded) {
+    for (char c: expanded) {
         switch (c) {
             case '+':
                 rotateU(turtle, angle);
@@ -597,20 +570,13 @@ Figure parse3DLSystemFigure(const ini::Configuration &configuration, const std::
         }
     }
 
-    const double scale = configuration[sectionName]["scale"].as_double_or_die();
-    const double rotX = configuration[sectionName]["rotateX"].as_double_or_die();
-    const double rotY = configuration[sectionName]["rotateY"].as_double_or_die();
-    const double rotZ = configuration[sectionName]["rotateZ"].as_double_or_die();
-    const Vector3D center = tuple_to_vector3d(configuration[sectionName]["center"].as_double_tuple_or_die());
-
-    Matrix matrix = figureTransform(scale, rotX, rotY, rotZ, center);
-    applyTransformation(figure, matrix);
+    // Niet meer transformeren hier, anders dubbel
 
     return figure;
 }
 
 
-static Figure parseWireframeFigure(const ini::Configuration& configuration, const std::string& sectionName) {
+static Figure parseWireframeFigure(const ini::Configuration &configuration, const std::string &sectionName) {
     const std::string type = configuration[sectionName]["type"].as_string_or_die();
 
     Figure figure;
@@ -693,7 +659,7 @@ static Figure parseWireframeFigure(const ini::Configuration& configuration, cons
     if (configuration[sectionName]["uv"].exists()) {
         ini::DoubleTuple flat = configuration[sectionName]["uv"].as_double_tuple_or_die();
         for (size_t k = 0; k + 1 < flat.size(); k += 2)
-            figure.uvs.push_back({flat[k], flat[k+1]});
+            figure.uvs.push_back({flat[k], flat[k + 1]});
     }
 
     const double scale = configuration[sectionName]["scale"].as_double_or_die();
@@ -718,17 +684,88 @@ Figures3D parseWireframeFigures(const ini::Configuration &configuration) {
         const std::string sectionName = "Figure" + std::to_string(i);
         const std::string type = configuration[sectionName]["type"].as_string_or_die();
 
-        // If this is a fractal type, expand into multiple figures
+        if (type.rfind("Thick", 0) == 0) {
+            const std::string baseType = type.substr(std::string("Thick").size());
+            const double radius = configuration[sectionName]["radius"].as_double_or_die();
+            const int n = configuration[sectionName]["n"].as_int_or_die();
+            const int mSub = configuration[sectionName]["m"].as_int_or_die();
+
+            Figure base;
+            if (baseType == "Cube")
+                base = createCube();
+            else if (baseType == "Tetrahedron")
+                base = createTetrahedron();
+            else if (baseType == "Octahedron")
+                base = createOctahedron();
+            else if (baseType == "Icosahedron")
+                base = createIcosahedron();
+            else if (baseType == "Dodecahedron")
+                base = createDodecahedron();
+            else if (baseType == "BuckyBall")
+                base = createBuckyBall();
+            else if (baseType == "LineDrawing")
+                base = parseLineDrawingFigure(configuration, sectionName);
+            else if (baseType == "3DLSystem")
+                base = parse3DLSystemFigure(configuration, sectionName);
+            else {
+                continue;
+            }
+
+            if (configuration[sectionName]["color"].exists()) {
+                auto t = configuration[sectionName]["color"].as_double_tuple_or_die();
+                base.color = ColorD(t[0], t[1], t[2]);
+                base.ambientReflection = base.color;
+            } else {
+                if (configuration[sectionName]["ambientReflection"].exists()) {
+                    auto t = configuration[sectionName]["ambientReflection"].as_double_tuple_or_die();
+                    base.ambientReflection = ColorD(t[0], t[1], t[2]);
+                }
+                if (configuration[sectionName]["diffuseReflection"].exists()) {
+                    auto t = configuration[sectionName]["diffuseReflection"].as_double_tuple_or_die();
+                    base.diffuseReflection = ColorD(t[0], t[1], t[2]);
+                }
+                if (configuration[sectionName]["specularReflection"].exists()) {
+                    auto t = configuration[sectionName]["specularReflection"].as_double_tuple_or_die();
+                    base.specularReflection = ColorD(t[0], t[1], t[2]);
+                    base.reflectionCoefficient =
+                            configuration[sectionName]["reflectionCoefficient"].as_double_or_default(0);
+                }
+            }
+
+            // THICKEN voor we scale enzo doen
+            Figures3D thick = thickenWireframe(base, radius, n, mSub);
+
+            const double scale = configuration[sectionName]["scale"].as_double_or_die();
+            const double rotX = configuration[sectionName]["rotateX"].as_double_or_die();
+            const double rotY = configuration[sectionName]["rotateY"].as_double_or_die();
+            const double rotZ = configuration[sectionName]["rotateZ"].as_double_or_die();
+            const Vector3D ctr = tuple_to_vector3d(configuration[sectionName]["center"].as_double_tuple_or_die());
+            Matrix M = figureTransform(scale, rotX, rotY, rotZ, ctr);
+
+            for (Figure &f: thick) {
+                applyTransformation(f, M);
+                figs.push_back(std::move(f));
+            }
+            continue;
+        }
+
+        // Fractal -> meerdere figures
         if (type.rfind("Fractal", 0) == 0) {
             const std::string baseType = type.substr(std::string("Fractal").size());
 
             Figure baseFig;
-            if (baseType == "Cube") baseFig = createCube();
-            else if (baseType == "Tetrahedron") baseFig = createTetrahedron();
-            else if (baseType == "Octahedron") baseFig = createOctahedron();
-            else if (baseType == "Icosahedron") baseFig = createIcosahedron();
-            else if (baseType == "Dodecahedron") baseFig = createDodecahedron();
-            else if (baseType == "BuckyBall") baseFig = createBuckyBall();
+            if (baseType == "Cube")
+                baseFig = createCube();
+            else if (baseType == "Tetrahedron")
+                baseFig = createTetrahedron();
+            else if (baseType == "Octahedron")
+                baseFig = createOctahedron();
+            else if (baseType == "Icosahedron")
+                baseFig = createIcosahedron();
+            else if (baseType == "Dodecahedron")
+                baseFig = createDodecahedron();
+            else if (baseType == "BuckyBall")
+                baseFig = createBuckyBall();
             else {
                 continue;
             }
@@ -771,7 +808,7 @@ Figures3D parseWireframeFigures(const ini::Configuration &configuration) {
             }
             // img::Color col = to_img_color(configuration[sectionName]["color"].as_double_tuple_or_die());
 
-            for (Figure &p : parts) {
+            for (Figure &p: parts) {
                 p.color = baseColor;
                 p.ambientReflection = ambRef;
                 p.diffuseReflection = diffRef;
@@ -849,8 +886,8 @@ img::EasyImage generate_wireframe_image(const ini::Configuration &configuration)
 }
 
 /////////SESSION 4
-static void drawZBufLine(ZBuffer& zbuf, img::EasyImage& image,
-    int x0, int y0, double z0, int x1, int y1, double z1, const img::Color &color) {
+static void drawZBufLine(ZBuffer &zbuf, img::EasyImage &image, int x0, int y0, double z0, int x1, int y1, double z1,
+                         const img::Color &color) {
 
     if ((x0 > x1) || ((x0 == x1) && (y0 > y1))) {
         std::swap(x0, x1);
@@ -859,8 +896,10 @@ static void drawZBufLine(ZBuffer& zbuf, img::EasyImage& image,
     }
 
     auto try_plot = [&](int x, int y, double t) {
-        if (x < 0 || y < 0) return;
-        if (x >= static_cast<int>(image.get_width()) || y >= static_cast<int>(image.get_height())) return;
+        if (x < 0 || y < 0)
+            return;
+        if (x >= static_cast<int>(image.get_width()) || y >= static_cast<int>(image.get_height()))
+            return;
 
         const double invz = (1.0 - t) * (1.0 / z0) + t * (1.0 / z1);
         if (invz < zbuf[x][y]) {
@@ -882,42 +921,38 @@ static void drawZBufLine(ZBuffer& zbuf, img::EasyImage& image,
             const double t = static_cast<double>(i) / steps;
             try_plot(x0, y0 + i * sign, t);
         }
-    }
-    else if (y0 == y1) {
+    } else if (y0 == y1) {
         const int dx = x1 - x0;
         const int steps = std::abs(dx);
         for (int i = 0; i <= steps; i++) {
-            const double t  = (steps == 0) ? 0.0 : static_cast<double>(i) / steps;
+            const double t = (steps == 0) ? 0.0 : static_cast<double>(i) / steps;
             try_plot(x0 + i, y0, t);
         }
-    }
-    else {
+    } else {
         const double m = static_cast<double>(y1 - y0) / static_cast<double>(x1 - x0);
 
         if (-1.0 <= m && m <= 1.0) {
             const int steps = x1 - x0;
             for (int i = 0; i <= steps; i++) {
-                const int x = x0 +i;
+                const int x = x0 + i;
                 const int y = static_cast<int>(std::lround(y0 + m * i));
                 const double t = static_cast<double>(i) / steps;
                 try_plot(x, y, t);
             }
-        }
-        else if (m > 1.0) {
+        } else if (m > 1.0) {
             const int steps = y1 - y0;
             for (int i = 0; i <= steps; i++) {
                 const int y = y0 + i;
-                const int x = static_cast<int>(std::lround(x0 + (i/m)));
+                const int x = static_cast<int>(std::lround(x0 + (i / m)));
                 const double t = static_cast<double>(i) / steps;
                 try_plot(x, y, t);
             }
-        }
-        else {
+        } else {
             // m < -1
             const int steps = y0 - y1;
             for (int i = 0; i <= steps; i++) {
                 const int y = y0 - i;
-                const int x = static_cast<int>(std::lround(x0 - (i/m)));
+                const int x = static_cast<int>(std::lround(x0 - (i / m)));
                 const double t = static_cast<double>(i) / steps;
                 try_plot(x, y, t);
             }
@@ -927,7 +962,7 @@ static void drawZBufLine(ZBuffer& zbuf, img::EasyImage& image,
 
 // copy van draw2DLines() maar voor buff
 // TODO: herschrijven zodat DRY
-img::EasyImage draw2DLinesZBuffered(const Lines2D &lines, const int size, const img::Color& color) {
+img::EasyImage draw2DLinesZBuffered(const Lines2D &lines, const int size, const img::Color &color) {
     if (lines.empty()) {
         return {};
     }
@@ -980,17 +1015,15 @@ img::EasyImage draw2DLinesZBuffered(const Lines2D &lines, const int size, const 
 
     ZBuffer zbuff(w, h);
 
-    for (auto& line: lines) {
+    for (auto &line: lines) {
         int x0 = static_cast<int>(std::lround(line.p1.x * d + dx));
         int y0 = static_cast<int>(std::lround(line.p1.y * d + dy));
         int x1 = static_cast<int>(std::lround(line.p2.x * d + dx));
         int y1 = static_cast<int>(std::lround(line.p2.y * d + dy));
 
-        if ((x0 < 0 && x1 < 0) || (x0 >= w && x1 >= w) ||
-            (y0 < 0 && y1 < 0) || (y0 >= h && y1 >= h)) {
+        if ((x0 < 0 && x1 < 0) || (x0 >= w && x1 >= w) || (y0 < 0 && y1 < 0) || (y0 >= h && y1 >= h)) {
             continue;
         }
-
 
 
         drawZBufLine(zbuff, image, x0, y0, line.z1, x1, y1, line.z2, line.color);
@@ -1017,7 +1050,8 @@ img::EasyImage generate_zbuffered_wireframe_image(const ini::Configuration &conf
 
 static std::vector<Face> triangulateFace(Face &face) {
     std::vector<Face> result;
-    if (face.point_indexes.size() < 3) return result;
+    if (face.point_indexes.size() < 3)
+        return result;
 
     int p0 = face.point_indexes[0];
     for (int i = 1; i + 1 < face.point_indexes.size(); i++) {
@@ -1027,11 +1061,12 @@ static std::vector<Face> triangulateFace(Face &face) {
 }
 
 static Figure triangulateFigure(Figure &fig) {
-    Figure result = fig; //kleur
+    Figure result = fig; // kleur
     result.faces.clear();
 
     for (Face &face: fig.faces) {
-        if (face.point_indexes.size() < 3) continue;
+        if (face.point_indexes.size() < 3)
+            continue;
         std::vector<Face> triangles = triangulateFace(face);
         result.faces.insert(result.faces.end(), triangles.begin(), triangles.end());
     }
@@ -1041,7 +1076,7 @@ static Figure triangulateFigure(Figure &fig) {
 Figures3D triangulateFigures3D(Figures3D &figures) {
     Figures3D result;
     result.reserve(figures.size());
-    for (Figure &fig : figures) {
+    for (Figure &fig: figures) {
         result.push_back(triangulateFigure(fig));
     }
     return result;
@@ -1063,14 +1098,17 @@ Parameters computeProjectionParamters(Figures3D &figs, int size) {
 
 
     for (Figure &fig: figs) {
-        for (Face &face : fig.faces) {
-            if (face.point_indexes.size() != 3)  continue;
+        for (Face &face: fig.faces) {
+            if (face.point_indexes.size() != 3)
+                continue;
 
-            for (int idx : face.point_indexes) {
-                if (idx < 0 || idx >= fig.points.size()) continue;
+            for (int idx: face.point_indexes) {
+                if (idx < 0 || idx >= fig.points.size())
+                    continue;
 
                 Vector3D p3 = fig.points[idx];
-                if (p3.z >= -eps) continue;
+                if (p3.z >= -eps)
+                    continue;
 
                 Point2D p2 = doProjection(p3, 1.0);
                 xMin = std::min(xMin, p2.x);
@@ -1083,12 +1121,14 @@ Parameters computeProjectionParamters(Figures3D &figs, int size) {
     }
 
     Parameters pp{};
-    if (!found || size <= 0) return pp;
+    if (!found || size <= 0)
+        return pp;
 
     double xRange = xMax - xMin;
     double yRange = yMax - yMin;
     double maxRange = std::max(xRange, yRange);
-    if (maxRange <= 1e-12) return pp;
+    if (maxRange <= 1e-12)
+        return pp;
 
     double imageX = static_cast<double>(size) * (xRange / maxRange);
     double imageY = static_cast<double>(size) * (yRange / maxRange);
@@ -1109,12 +1149,13 @@ Parameters computeProjectionParamters(Figures3D &figs, int size) {
 
 // Helper pg70: 1/z interpolatie
 // schaduw test: kijk of punt zichtbaar is vanuit puntbron (cursus p. 69)
-static bool isLitByPointLight(const Vector3D& pxlpoint, const Light& light, const Matrix& invEye) {
+static bool isLitByPointLight(const Vector3D &pxlpoint, const Light &light, const Matrix &invEye) {
     // terug naar wereld, dan naar coordinaten van de lichtbron
     Vector3D pWorld = pxlpoint * invEye;
     Vector3D pL = pWorld * light.eye;
 
-    if (pL.z >= 0) return false;
+    if (pL.z >= 0)
+        return false;
 
     // projectie in shadowmask
     double xL = (light.d * pL.x) / (-pL.z) + light.dx;
@@ -1126,16 +1167,14 @@ static bool isLitByPointLight(const Vector3D& pxlpoint, const Light& light, cons
     double ay = yL - ys;
 
     // randen: niet in schaduw
-    if (xs < 0 || ys < 0
-        || xs + 1 >= (int) light.shadowMask.size()
-        || ys + 1 >= (int) light.shadowMask[0].size()) {
+    if (xs < 0 || ys < 0 || xs + 1 >= (int) light.shadowMask.size() || ys + 1 >= (int) light.shadowMask[0].size()) {
         return true;
-        }
+    }
 
     // bilineaire interpolatie van 1/z (cursus p. 70, fig 47)
-    double zA = light.shadowMask[xs    ][ys    ];
-    double zB = light.shadowMask[xs + 1][ys    ];
-    double zC = light.shadowMask[xs    ][ys + 1];
+    double zA = light.shadowMask[xs][ys];
+    double zB = light.shadowMask[xs + 1][ys];
+    double zC = light.shadowMask[xs][ys + 1];
     double zD = light.shadowMask[xs + 1][ys + 1];
 
     double zE = (1 - ax) * zA + ax * zB;
@@ -1149,37 +1188,25 @@ static bool isLitByPointLight(const Vector3D& pxlpoint, const Light& light, cons
 }
 
 
-
-static void draw_zbuf_triag(
-    ZBuffer& zBuffer,
-    img::EasyImage& image,
-    const Vector3D& A,
-    const Vector3D& B,
-    const Vector3D& C,
-    double d,
-    double dx,
-    double dy,
-    const Figure& fig,
-    const Lights3D &lights,
-    bool shadowEnabled,
-    const Matrix& invEye,
-    const UV& uvA = {},
-    const UV& uvB = {},
-    const UV& uvC = {},
-    bool buildShadowMask = false
-) {
+static void draw_zbuf_triag(ZBuffer &zBuffer, img::EasyImage &image, const Vector3D &A, const Vector3D &B,
+                            const Vector3D &C, double d, double dx, double dy, const Figure &fig,
+                            const Lights3D &lights, bool shadowEnabled, const Matrix &invEye, const UV &uvA = {},
+                            const UV &uvB = {}, const UV &uvC = {}, bool buildShadowMask = false) {
     double eps = 1e-9;
-    if (A.z >= -eps || B.z >= -eps || C.z >= -eps) return;
+    if (A.z >= -eps || B.z >= -eps || C.z >= -eps)
+        return;
 
 
-    double ax = d * A.x / (-A.z) + dx,  ay = d * A.y / (-A.z) + dy;
-    double bx = d * B.x / (-B.z) + dx,  by = d * B.y / (-B.z) + dy;
-    double cx = d * C.x / (-C.z) + dx,  cy = d * C.y / (-C.z) + dy;
+    double ax = d * A.x / (-A.z) + dx, ay = d * A.y / (-A.z) + dy;
+    double bx = d * B.x / (-B.z) + dx, by = d * B.y / (-B.z) + dy;
+    double cx = d * C.x / (-C.z) + dx, cy = d * C.y / (-C.z) + dy;
 
     const Vector3D w = Vector3D::cross(B - A, C - A);
     const double k = Vector3D::dot(w, A);
-    if (std::abs(k) < eps) return;
-    if (!buildShadowMask && g_backfaceCulling && k > 0) return; // cull backfaces
+    if (std::abs(k) < eps)
+        return;
+    if (!buildShadowMask && g_backfaceCulling && k > 0)
+        return; // cull backfaces
 
     const double dzdx = w.x / (-d * k);
     const double dzdy = w.y / (-d * k);
@@ -1187,15 +1214,17 @@ static void draw_zbuf_triag(
     const double yG = (ay + by + cy) / 3.0;
     const double invZG = 1.0 / (3.0 * A.z) + 1.0 / (3.0 * B.z) + 1.0 / (3.0 * C.z);
 
-    const int minX = std::max(0, (int)std::floor(std::min({ax, bx, cx})));
-    const int maxX = std::min((int)image.get_width()  - 1,(int)std::ceil (std::max({ax, bx, cx})));
-    const int minY = std::max(0, (int)std::floor(std::min({ay, by, cy})));
-    const int maxY = std::min((int)image.get_height() - 1,(int)std::ceil (std::max({ay, by, cy})));
+    const int minX = std::max(0, (int) std::floor(std::min({ax, bx, cx})));
+    const int maxX = std::min((int) image.get_width() - 1, (int) std::ceil(std::max({ax, bx, cx})));
+    const int minY = std::max(0, (int) std::floor(std::min({ay, by, cy})));
+    const int maxY = std::min((int) image.get_height() - 1, (int) std::ceil(std::max({ay, by, cy})));
 
-    if (minX > maxX || minY > maxY) return;
+    if (minX > maxX || minY > maxY)
+        return;
 
     const double area = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
-    if (std::abs(area) < eps) return;
+    if (std::abs(area) < eps)
+        return;
     const double invArea = 1.0 / area;
 
     // Lights
@@ -1209,12 +1238,13 @@ static void draw_zbuf_triag(
     for (int y = minY; y <= maxY; ++y) {
         for (int x = minX; x <= maxX; ++x) {
             const double alpha = ((bx - x) * (cy - y) - (by - y) * (cx - x)) * invArea;
-            const double beta  = ((cx - x) * (ay - y) - (cy - y) * (ax - x)) * invArea;
+            const double beta = ((cx - x) * (ay - y) - (cy - y) * (ax - x)) * invArea;
             const double gamma = 1.0 - alpha - beta;
 
             const bool insidePos = (alpha >= 0.0 && beta >= 0.0 && gamma >= 0.0);
             const bool insideNeg = (alpha <= 0.0 && beta <= 0.0 && gamma <= 0.0);
-            if (!(insidePos || insideNeg)) continue;
+            if (!(insidePos || insideNeg))
+                continue;
 
             double zBias = buildShadowMask ? 1.0 : 1.0001;
             double invZ = zBias * invZG + (x - xG) * dzdx + (y - yG) * dzdy;
@@ -1227,13 +1257,13 @@ static void draw_zbuf_triag(
                 double realX = (x - dx) * (-realZ) / d;
                 double realY = (y - dy) * (-realZ) / d;
                 Vector3D pxlpoint = Vector3D::point(realX, realY, realZ);
-                //Vector3D pxlpoint_world = pxlpoint * invEye; // wereld coordinaten, voor shadows
+                // Vector3D pxlpoint_world = pxlpoint * invEye; // wereld coordinaten, voor shadows
 
                 double totalR = 0, totalG = 0, totalB = 0;
                 Vector3D direction = -pxlpoint;
                 direction.normalise();
 
-                for (auto& light : lights) {
+                for (auto &light: lights) {
                     // ambient
                     totalR += light.ambient.red * fig.ambientReflection.red;
                     totalG += light.ambient.green * fig.ambientReflection.green;
@@ -1244,7 +1274,8 @@ static void draw_zbuf_triag(
                     if (shadowEnabled && !light.infinity) {
                         lit = isLitByPointLight(pxlpoint, light, invEye);
                     }
-                    if (!lit) continue;
+                    if (!lit)
+                        continue;
 
                     Vector3D ld;
                     if (light.infinity) {
@@ -1280,9 +1311,9 @@ static void draw_zbuf_triag(
                             double cosBeta = Vector3D::dot(rDir, direction);
                             if (cosBeta > 0 && normalLD > 0) {
                                 double specMultiplier = std::pow(cosBeta, fig.reflectionCoefficient);
-                                totalR += light.specular.red   * fig.specularReflection.red   * specMultiplier;
+                                totalR += light.specular.red * fig.specularReflection.red * specMultiplier;
                                 totalG += light.specular.green * fig.specularReflection.green * specMultiplier;
-                                totalB += light.specular.blue  * fig.specularReflection.blue  * specMultiplier;
+                                totalB += light.specular.blue * fig.specularReflection.blue * specMultiplier;
                             }
                         }
                     }
@@ -1309,23 +1340,26 @@ static void draw_zbuf_triag(
                     u = u - std::floor(u);
                     v = v - std::floor(v);
 
-                    int tx = (int)(u * fig.texture->get_width());
-                    int ty = (int)((1.0 - v) * fig.texture->get_height());
-                    if (tx >= (int) fig.texture->get_width())  tx = fig.texture->get_width()  - 1;
-                    if (ty >= (int) fig.texture->get_height()) ty = fig.texture->get_height() - 1;
+                    int tx = (int) (u * fig.texture->get_width());
+                    int ty = (int) ((1.0 - v) * fig.texture->get_height());
+                    if (tx >= (int) fig.texture->get_width())
+                        tx = fig.texture->get_width() - 1;
+                    if (ty >= (int) fig.texture->get_height())
+                        ty = fig.texture->get_height() - 1;
 
                     img::Color tex = (*fig.texture)(tx, ty);
 
-                    cFinal.red   = std::lround(totalR * tex.red);
+                    cFinal.red = std::lround(totalR * tex.red);
                     cFinal.green = std::lround(totalG * tex.green);
-                    cFinal.blue  = std::lround(totalB * tex.blue);
+                    cFinal.blue = std::lround(totalB * tex.blue);
                 } else {
-                    cFinal.red   = std::lround(totalR * 255);
+                    cFinal.red = std::lround(totalR * 255);
                     cFinal.green = std::lround(totalG * 255);
-                    cFinal.blue  = std::lround(totalB * 255);
+                    cFinal.blue = std::lround(totalB * 255);
                 }
 
-                image(static_cast<unsigned int>(x), static_cast<unsigned int>(y)) = cFinal;            }
+                image(static_cast<unsigned int>(x), static_cast<unsigned int>(y)) = cFinal;
+            }
         }
     }
 }
@@ -1352,8 +1386,9 @@ img::EasyImage generate_zbuffering_image(const ini::Configuration &configuration
 
     // shadows
     if (shadowEnabled) {
-        for (auto& light : lights) {
-            if (light.infinity) continue;
+        for (auto &light: lights) {
+            if (light.infinity)
+                continue;
 
             light.eye = eyePointTrans(light.location);
             Figures3D shadowFigures = triangulateFigures3D(figures);
@@ -1368,20 +1403,18 @@ img::EasyImage generate_zbuffering_image(const ini::Configuration &configuration
             img::EasyImage resultImage(shadowPm.width, shadowPm.height);
             Lights3D noLights;
 
-            for (auto& fig : shadowFigures) {
-                for (auto& face : fig.faces) {
-                    if (face.point_indexes.size() != 3) continue;
+            for (auto &fig: shadowFigures) {
+                for (auto &face: fig.faces) {
+                    if (face.point_indexes.size() != 3)
+                        continue;
                     const Vector3D &A = fig.points[face.point_indexes[0]];
                     const Vector3D &B = fig.points[face.point_indexes[1]];
                     const Vector3D &C = fig.points[face.point_indexes[2]];
 
 
-                    draw_zbuf_triag(light.shadowMask, resultImage, A, B, C, light.d, light.dx,
-                        light.dy, fig, noLights, false, Matrix(),
-                        {}, {}, {}, true);
-
+                    draw_zbuf_triag(light.shadowMask, resultImage, A, B, C, light.d, light.dx, light.dy, fig, noLights,
+                                    false, Matrix(), {}, {}, {}, true);
                 }
-
             }
         }
     }
@@ -1397,17 +1430,19 @@ img::EasyImage generate_zbuffering_image(const ini::Configuration &configuration
     ZBuffer zbuf(pp.width, pp.height);
 
 
-    for (Figure &fig : triFigures) {
-        for (Face &face : fig.faces) {
-            if (face.point_indexes.size() != 3) continue;
+    for (Figure &fig: triFigures) {
+        for (Face &face: fig.faces) {
+            if (face.point_indexes.size() != 3)
+                continue;
 
             int i0 = face.point_indexes[0];
             int i1 = face.point_indexes[1];
             int i2 = face.point_indexes[2];
-            if (i0 < 0 || i1 < 0 || i2 < 0) continue;
-            if (i0 >= static_cast<int>(fig.points.size()) ||
-                i1 >= static_cast<int>(fig.points.size()) ||
-                i2 >= static_cast<int>(fig.points.size())) continue;
+            if (i0 < 0 || i1 < 0 || i2 < 0)
+                continue;
+            if (i0 >= static_cast<int>(fig.points.size()) || i1 >= static_cast<int>(fig.points.size()) ||
+                i2 >= static_cast<int>(fig.points.size()))
+                continue;
 
             const Vector3D &A = fig.points[i0];
             const Vector3D &B = fig.points[i1];
@@ -1423,7 +1458,8 @@ img::EasyImage generate_zbuffering_image(const ini::Configuration &configuration
             }
 
 
-            draw_zbuf_triag(zbuf, image, A, B, C, pp.d, pp.dx, pp.dy, fig, lights, shadowEnabled, Matrix::inv(eyeMatrix), uvA, uvB, uvC);
+            draw_zbuf_triag(zbuf, image, A, B, C, pp.d, pp.dx, pp.dy, fig, lights, shadowEnabled,
+                            Matrix::inv(eyeMatrix), uvA, uvB, uvC);
         }
     }
 
@@ -1431,13 +1467,10 @@ img::EasyImage generate_zbuffering_image(const ini::Configuration &configuration
 }
 
 //////////////////////////////////////////////////////////////////////////////
-img::EasyImage generate_color_rectangle(unsigned int width, unsigned int height)
-{
+img::EasyImage generate_color_rectangle(unsigned int width, unsigned int height) {
     img::EasyImage image(width, height);
-    for(unsigned int i = 0; i < width; i++)
-    {
-        for(unsigned int j = 0; j < height; j++)
-        {
+    for (unsigned int i = 0; i < width; i++) {
+        for (unsigned int j = 0; j < height; j++) {
             image(i, j).red = i;
             image(i, j).green = j;
             image(i, j).blue = (i + j) % 256;
@@ -1446,18 +1479,14 @@ img::EasyImage generate_color_rectangle(unsigned int width, unsigned int height)
     return image;
 }
 
-img::EasyImage generate_image(const ini::Configuration &configuration)
-{
-	std::string type = configuration["General"]["type"].as_string_or_die();
+img::EasyImage generate_image(const ini::Configuration &configuration) {
+    std::string type = configuration["General"]["type"].as_string_or_die();
 
-	if (type == "IntroColorRectangle")
-	{
-		int width = configuration["ImageProperties"]["width"].as_int_or_die();
-		int height = configuration["ImageProperties"]["height"].as_int_or_die();
-		return generate_color_rectangle(width, height);
-	}
-    else if (type == "2DLSystem")
-    {
+    if (type == "IntroColorRectangle") {
+        int width = configuration["ImageProperties"]["width"].as_int_or_die();
+        int height = configuration["ImageProperties"]["height"].as_int_or_die();
+        return generate_color_rectangle(width, height);
+    } else if (type == "2DLSystem") {
         int size = configuration["General"]["size"].as_int_or_die();
         ini::DoubleTuple bg_vec = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
         img::Color bgColor(lround(bg_vec[0] * 255), lround(bg_vec[1] * 255), lround(bg_vec[2] * 255));
@@ -1470,9 +1499,10 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         if (!lFile.is_open()) {
             // relative path problemen
             std::vector<std::string> prefixes = {"l_systems/", "lsystem2D/", "../l_systems/", "../lsystem2D/"};
-            for (const auto& prefix : prefixes) {
+            for (const auto &prefix: prefixes) {
                 lFile.open(prefix + inputfile);
-                if (lFile.is_open()) break;
+                if (lFile.is_open())
+                    break;
             }
         }
         if (!lFile.is_open()) {
@@ -1485,94 +1515,73 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
 
         Lines2D lines = generate_LSystem_2D(lSystem, lineColor);
         return draw2DLines(lines, size, bgColor);
-    }
-    else if (type == "Wireframe") {
+    } else if (type == "Wireframe") {
         return generate_wireframe_image(configuration);
-    }
-    else if (type == "ZBufferedWireframe") {
+    } else if (type == "ZBufferedWireframe") {
         return generate_zbuffered_wireframe_image(configuration);
-    }
-    else if (type == "ZBuffering" || type == "LightedZBuffering") {
+    } else if (type == "ZBuffering" || type == "LightedZBuffering") {
         return generate_zbuffering_image(configuration);
     }
 
-	return img::EasyImage();
+    return img::EasyImage();
 }
 
-int main(int argc, char const* argv[])
-{
-        int retVal = 0;
-        try
-        {
-                std::vector<std::string> args = std::vector<std::string>(argv+1, argv+argc);
-                if (args.empty()) {
-                        std::ifstream fileIn("filelist");
-                        std::string filelistName;
-                        while (std::getline(fileIn, filelistName)) {
-                                args.push_back(filelistName);
-                        }
-                }
-                for(std::string fileName : args)
-                {
-                        ini::Configuration conf;
-                        try
-                        {
-                                std::ifstream fin(fileName);
-                                if (fin.peek() == std::istream::traits_type::eof()) {
-                                    std::cout << "Ini file appears empty. Does '" <<
-                                    fileName << "' exist?" << std::endl;
-                                    continue;
-                                }
-                                fin >> conf;
-                                fin.close();
-                        }
-                        catch(ini::ParseException& ex)
-                        {
-                                std::cerr << "Error parsing file: " << fileName << ": " << ex.what() << std::endl;
-                                retVal = 1;
-                                continue;
-                        }
-
-                        img::EasyImage image = generate_image(conf);
-                        if(image.get_height() > 0 && image.get_width() > 0)
-                        {
-                                std::string::size_type pos = fileName.rfind('.');
-                                if(pos == std::string::npos)
-                                {
-                                        //filename does not contain a '.' --> append a '.bmp' suffix
-                                        fileName += ".bmp";
-                                }
-                                else
-                                {
-                                        fileName = fileName.substr(0,pos) + ".bmp";
-                                }
-                                try
-                                {
-                                        std::ofstream f_out(fileName.c_str(),std::ios::trunc | std::ios::out | std::ios::binary);
-                                        f_out << image;
-
-                                }
-                                catch(std::exception& ex)
-                                {
-                                        std::cerr << "Failed to write image to file: " << ex.what() << std::endl;
-                                        retVal = 1;
-                                }
-                        }
-                        else
-                        {
-                                std::cout << "Could not generate image for " << fileName << std::endl;
-                        }
-                }
+int main(int argc, char const *argv[]) {
+    int retVal = 0;
+    try {
+        std::vector<std::string> args = std::vector<std::string>(argv + 1, argv + argc);
+        if (args.empty()) {
+            std::ifstream fileIn("filelist");
+            std::string filelistName;
+            while (std::getline(fileIn, filelistName)) {
+                args.push_back(filelistName);
+            }
         }
-        catch(const std::bad_alloc &exception)
-        {
-    		//When you run out of memory this exception is thrown. When this happens the return value of the program MUST be '100'.
-    		//Basically this return value tells our automated test scripts to run your engine on a pc with more memory.
-    		//(Unless of course you are already consuming the maximum allowed amount of memory)
-    		//If your engine does NOT adhere to this requirement you risk losing points because then our scripts will
-		//mark the test as failed while in reality it just needed a bit more memory
-                std::cerr << "Error: insufficient memory" << std::endl;
-                retVal = 100;
+        for (std::string fileName: args) {
+            ini::Configuration conf;
+            try {
+                std::ifstream fin(fileName);
+                if (fin.peek() == std::istream::traits_type::eof()) {
+                    std::cout << "Ini file appears empty. Does '" << fileName << "' exist?" << std::endl;
+                    continue;
+                }
+                fin >> conf;
+                fin.close();
+            } catch (ini::ParseException &ex) {
+                std::cerr << "Error parsing file: " << fileName << ": " << ex.what() << std::endl;
+                retVal = 1;
+                continue;
+            }
+
+            img::EasyImage image = generate_image(conf);
+            if (image.get_height() > 0 && image.get_width() > 0) {
+                std::string::size_type pos = fileName.rfind('.');
+                if (pos == std::string::npos) {
+                    // filename does not contain a '.' --> append a '.bmp' suffix
+                    fileName += ".bmp";
+                } else {
+                    fileName = fileName.substr(0, pos) + ".bmp";
+                }
+                try {
+                    std::ofstream f_out(fileName.c_str(), std::ios::trunc | std::ios::out | std::ios::binary);
+                    f_out << image;
+
+                } catch (std::exception &ex) {
+                    std::cerr << "Failed to write image to file: " << ex.what() << std::endl;
+                    retVal = 1;
+                }
+            } else {
+                std::cout << "Could not generate image for " << fileName << std::endl;
+            }
         }
-        return retVal;
+    } catch (const std::bad_alloc &exception) {
+        // When you run out of memory this exception is thrown. When this happens the return value of the program MUST
+        // be '100'. Basically this return value tells our automated test scripts to run your engine on a pc with more
+        // memory. (Unless of course you are already consuming the maximum allowed amount of memory) If your engine does
+        // NOT adhere to this requirement you risk losing points because then our scripts will
+        // mark the test as failed while in reality it just needed a bit more memory
+        std::cerr << "Error: insufficient memory" << std::endl;
+        retVal = 100;
+    }
+    return retVal;
 }

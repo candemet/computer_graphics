@@ -1,0 +1,106 @@
+Opdracht 3D-Fractalen
+Tim Apers
+
+3D-Fractalen
+• Implementeer een methode/functie om een 3D-Fractaal
+te genereren van een willekeurige 3D-Figuur
+Input: te fractaliseren
+
+Output: gefractaliseerde figuur
+
+– Vb: void generateFractal(Figure& fig, Figures3D& fractal,
+const int nr_iterations, const double scale);
+
+– def generateFractal(fig, nr_iterations, scale) :
+…
+return fractal_fig
+
+• Breid je engine uit met ondersteuning voor het
+genereren van 3D-Fractalen van volgende platonische
+lichamen:
+– Kubus
+– Tetrahedron
+– Octahedron
+– Icosahedron
+– Dodecahedron
+
+(we verwachten 1 implementatie die voor
+eender welke soort figuur werkt, maar
+testen enkel met de hier vermelde
+soorten)
+Practicum Computer Graphics: 3D-Fractalen
+
+2
+
+Genereren van 3D-Fractalen
+• Opstellen van een 3D-Fractaal
+– Begin met een platonisch
+lichaam
+– Maak per hoekpunt een
+geschaalde kopie aan
+– Verplaats deze zodat het
+hoekpunt samenvalt met
+hetzelfde hoekpunt in de
+originele figuur
+
+– Voer deze operatie in totaal
+nr_iterations keer uit
+– Vervang bij iteratie i+1 alle
+figuren die in iteratie i
+aangemaakt zijn
+Practicum Computer Graphics: 3D-Fractalen
+
+3
+
+Genereren van 3D-Fractalen
+• Voor elk punt Pi in de oorspronkelijke
+figuur:
+1. Kopieer de oorspronkelijke figuur
+Pi
+
+1. Schaal de punten van de nieuwe figuur
+• Maak gebruik van:
+– Matrix scaleFigure(
+const double scale);
+– void applyTransformation(
+Figure &, const Matrix &);
+
+P’i
+
+• Transformatiematrix:
+– Geschaald punt:
+
+Practicum Computer Graphics: 3D-Fractalen
+
+4
+
+Genereren van 3D-Fractalen
+• Voor elk punt Pi in de oorspronkelijke
+figuur:
+3. Verplaats de nieuwe figuur naar de juiste
+plaats
+Pi
+
+• Maak gebruik van:
+– Matrix translate(const Vector3D &vector);
+– void applyTransformation(
+Figure &, const Matrix &);
+
+P’i
+
+• Na translatie moet P’i samenvallen
+met Pi
+– Verschuif over vector:
+
+– Transformatiematrix:
+Practicum Computer Graphics: 3D-Fractalen
+
+5
+
+Mengerspons
+
+Bucky ball
+
+Practicum Computer Graphics: 3D-Fractalen
+
+

@@ -3,6 +3,13 @@
 // niet meer alles in engine.cc zetten
 //
 #include "geometry3d.h"
+#include <map>
+#include <utility>
+
+// snelle forward declaration, zou best in aparte header moeten TODO
+Matrix scaleFigure(double scale);
+Matrix translate(const Vector3D& vector);
+void applyTransformation(Figure& figure, const Matrix& m);
 
 Figure createCube() {
     Figure cube;
@@ -60,14 +67,14 @@ Figure createOctahedron() {
     };
 
     octa.faces = {
-        Face{{3, 0, 4}},
-        Face{{1, 3, 4}},
-        Face{{2, 1, 4}},
-        Face{{0, 2, 4}},
-        Face{{2, 0, 5}},
-        Face{{1, 2, 5}},
-        Face{{3, 1, 5}},
-        Face{{0, 3, 5}},
+        Face{{0, 3, 4}},
+        Face{{3, 1, 4}},
+        Face{{1, 2, 4}},
+        Face{{2, 0, 4}},
+        Face{{3, 0, 5}},
+        Face{{1, 3, 5}},
+        Face{{2, 1, 5}},
+        Face{{0, 2, 5}},
     };
 
     return octa;
@@ -236,90 +243,38 @@ Figure createCylinder(int n, double height) {
 Figure createSphere(const double radius, const int n) {
     Figure sphere = createIcosahedron();
 
-    // Steps 2 & 3: Subdivide 'n' times (Flat subdivision)
     for (int i = 0; i < n; ++i) {
         std::vector<Face> newFaces;
         newFaces.reserve(sphere.faces.size() * 4);
 
+        std::map<std::pair<int,int>, int> midCache;
+        auto midpoint = [&](int a, int b) {
+            auto key = std::minmax(a, b);
+            if (auto it = midCache.find(key); it != midCache.end()) return it->second;
+            int idx = (int) sphere.points.size();
+            sphere.points.push_back((sphere.points[a] + sphere.points[b]) * 0.5);
+            midCache[key] = idx;
+            return idx;
+        };
+
         for (const auto &face : sphere.faces) {
-            int idx0 = face.point_indexes[0];
-            int idx1 = face.point_indexes[1];
-            int idx2 = face.point_indexes[2];
-
-            // Calculate midpoints (Do NOT normalise here to match the slide)
-            Vector3D mpoint1 = (sphere.points[idx0] + sphere.points[idx1]) * 0.5;
-            Vector3D mpoint2 = (sphere.points[idx1] + sphere.points[idx2]) * 0.5;
-            Vector3D mpoint3 = (sphere.points[idx2] + sphere.points[idx0]) * 0.5;
-
-            int midIdx1 = static_cast<int>(sphere.points.size());
-            sphere.points.push_back(mpoint1);
-            int midIdx2 = static_cast<int>(sphere.points.size());
-            sphere.points.push_back(mpoint2);
-            int midIdx3 = static_cast<int>(sphere.points.size());
-            sphere.points.push_back(mpoint3);
-
-            newFaces.push_back(Face{{idx0, midIdx1, midIdx3}});
-            newFaces.push_back(Face{{midIdx1, idx1, midIdx2}});
-            newFaces.push_back(Face{{midIdx3, midIdx2, idx2}});
-            newFaces.push_back(Face{{midIdx1, midIdx2, midIdx3}});
+            int i0 = face.point_indexes[0];
+            int i1 = face.point_indexes[1];
+            int i2 = face.point_indexes[2];
+            int m01 = midpoint(i0, i1);
+            int m12 = midpoint(i1, i2);
+            int m20 = midpoint(i2, i0);
+            newFaces.push_back(Face{{i0,  m01, m20}});
+            newFaces.push_back(Face{{m01, i1,  m12}});
+            newFaces.push_back(Face{{m20, m12, i2 }});
+            newFaces.push_back(Face{{m01, m12, m20}});
         }
-        sphere.faces = newFaces;
+        sphere.faces = std::move(newFaces);
     }
 
-    // Step 4: Rescale ALL points
-    for (auto &point : sphere.points) {
-        point.normalise(); // Projects the flat subdivided grid onto the unit sphere
-        point *= radius;   // Scales to the final requested radius
-    }
-
+    for (auto &p : sphere.points) { p.normalise(); p *= radius; }
     return sphere;
 }
-
-// Figure createSphere(const double radius, const int n) {
-//     Figure sphere = createIcosahedron();
-//
-//     for (auto &point : sphere.points) {
-//         point.normalise();
-//     }
-//
-//     for (int i = 0; i < n; ++i) {
-//         std::vector<Face> newFaces;
-//         newFaces.reserve(sphere.faces.size() * 4);
-//
-//         for (const auto &face : sphere.faces) {
-//             int idx0 = face.point_indexes[0];
-//             int idx1 = face.point_indexes[1];
-//             int idx2 = face.point_indexes[2];
-//
-//             Vector3D mpoint1 = (sphere.points[idx0] + sphere.points[idx1]) * 0.5;
-//             Vector3D mpoint2 = (sphere.points[idx1] + sphere.points[idx2]) * 0.5;
-//             Vector3D mpoint3 = (sphere.points[idx2] + sphere.points[idx0]) * 0.5;
-//
-//             mpoint1.normalise();
-//             mpoint2.normalise();
-//             mpoint3.normalise();
-//
-//             int midIdx1 = static_cast<int>(sphere.points.size());
-//             sphere.points.push_back(mpoint1);
-//             int midIdx2 = static_cast<int>(sphere.points.size());
-//             sphere.points.push_back(mpoint2);
-//             int midIdx3 = static_cast<int>(sphere.points.size());
-//             sphere.points.push_back(mpoint3);
-//
-//             newFaces.push_back(Face{{idx0, midIdx1, midIdx3}});
-//             newFaces.push_back(Face{{midIdx1, idx1, midIdx2}});
-//             newFaces.push_back(Face{{midIdx3, midIdx2, idx2}});
-//             newFaces.push_back(Face{{midIdx1, midIdx2, midIdx3}});
-//         }
-//         sphere.faces = newFaces;
-//     }
-//
-//     for (auto &point : sphere.points) {
-//         point *= radius;
-//     }
-//
-//     return sphere;
-// }
 
 
 Figure createTorus(double r, double R, int n, int m) {
@@ -355,4 +310,108 @@ Figure createTorus(double r, double R, int n, int m) {
         }
     }
     return torus;
+}
+
+Figures3D generateFractal(Figure& fig, const int nrIterations, const double scale) {
+    Figures3D current;
+    current.push_back(fig);
+
+    if (nrIterations <= 0 || scale == 0.0) return current;
+
+    for (int iter = 0; iter < nrIterations; ++iter) {
+        Figures3D next;
+
+        for (const Figure& base : current) {
+            const int n = static_cast<int>(base.points.size());
+            if (n == 0) continue;
+
+            for (int i = 0; i < n; ++i) {
+                Figure copy = base;
+
+                // rond origin scalen
+                Matrix s = scaleFigure(1.0 / scale);
+                applyTransformation(copy, s);
+
+                Vector3D original = base.points[i];
+                Vector3D scaled = copy.points[i];
+                Vector3D delta = original - scaled;
+
+                Matrix t = translate(delta);
+                applyTransformation(copy, t);
+
+                next.push_back(copy);
+            }
+        }
+
+        current.swap(next);
+    }
+
+    return current;
+}
+
+// subdivided icosahedron -> sphere (icosphere).
+Figure createBuckyBall() {
+    const int subdivisions = 1;
+    return createSphere(1.0, subdivisions);
+}
+
+// append a cube (centered at `center`, with side length `size`) into `target`.
+static void appendCubeToFigure(Figure &target, const Vector3D &center, double size) {
+    double half = size / 2.0;
+
+    const double cx = center.x;
+    const double cy = center.y;
+    const double cz = center.z;
+
+    // 8 corners
+    std::vector<Vector3D> corners;
+    corners.reserve(8);
+    corners.push_back(Vector3D::point(cx + half, cy + half, cz + half));
+    corners.push_back(Vector3D::point(cx - half, cy + half, cz + half));
+    corners.push_back(Vector3D::point(cx - half, cy - half, cz + half));
+    corners.push_back(Vector3D::point(cx + half, cy - half, cz + half));
+    corners.push_back(Vector3D::point(cx + half, cy + half, cz - half));
+    corners.push_back(Vector3D::point(cx - half, cy + half, cz - half));
+    corners.push_back(Vector3D::point(cx - half, cy - half, cz - half));
+    corners.push_back(Vector3D::point(cx + half, cy - half, cz - half));
+
+    int baseIdx = static_cast<int>(target.points.size());
+    for (const auto &p : corners) target.points.push_back(p);
+
+    // faces
+    target.faces.push_back(Face{{baseIdx + 0, baseIdx + 1, baseIdx + 2, baseIdx + 3}}); // +Z
+    target.faces.push_back(Face{{baseIdx + 4, baseIdx + 7, baseIdx + 6, baseIdx + 5}}); // -Z
+    target.faces.push_back(Face{{baseIdx + 0, baseIdx + 3, baseIdx + 7, baseIdx + 4}}); // +X
+    target.faces.push_back(Face{{baseIdx + 1, baseIdx + 5, baseIdx + 6, baseIdx + 2}}); // -X
+    target.faces.push_back(Face{{baseIdx + 0, baseIdx + 4, baseIdx + 5, baseIdx + 1}}); // +Y
+    target.faces.push_back(Face{{baseIdx + 3, baseIdx + 2, baseIdx + 6, baseIdx + 7}}); // -Y
+}
+
+static void addMengerRecursive(Figure &acc, const Vector3D &center, double size, int iter) {
+    if (iter <= 0) {
+        appendCubeToFigure(acc, center, size);
+        return;
+    }
+
+    double newSize = size / 3.0;
+    for (int i = -1; i <= 1; ++i) {
+        for (int j = -1; j <= 1; ++j) {
+            for (int k = -1; k <= 1; ++k) {
+                int zeroCount = (i == 0) + (j == 0) + (k == 0);
+                if (zeroCount >= 2) continue;
+                Vector3D newCenter = Vector3D::point(
+                    center.x + i * newSize,
+                    center.y + j * newSize,
+                    center.z + k * newSize
+                );
+                addMengerRecursive(acc, newCenter, newSize, iter - 1);
+            }
+        }
+    }
+}
+
+Figure createMengerSponge(int nrIterations) {
+    Figure sponge;
+    addMengerRecursive(sponge, Vector3D::point(0,0,0), 2.0, nrIterations);
+    return sponge;
 }

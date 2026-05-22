@@ -6,6 +6,7 @@
 
 class ZBuffer : public std::vector<std::vector<double>> {
 public:
+    ZBuffer() {};
     ZBuffer(unsigned int width, unsigned int height)
         : std::vector<std::vector<double>>(width, std::vector<double>(height, std::numeric_limits<double>::infinity())) {}
 };

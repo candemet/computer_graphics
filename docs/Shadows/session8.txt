@@ -1,0 +1,40 @@
+Computer Graphics: Schaduw & Texture mapping
+Tim Apers
+
+Schaduwen (1 punt)
+Voeg ondersteuning aan je engine toe voor het weergeven van schaduwen. Zoals vermeld in de
+cursus, hoeft schaduw enkel ondersteund te worden voor puntbronnen. Verder mag je er bij het
+uitwerken van de opdracht vanuit gaan dat alle puntbronnen zich buiten de te renderen 3D wereld
+bevinden.
+
+Invoerformaat
+Het ini-formaat voor deze opdracht is grotendeels hetzelfde als voor de opdracht belichting. Enkel
+de volgende velden werden aan de General sectie toegevoegd:
+• shadowEnabled (boolean): true wanneer schaduwen moeten worden weergegeven, false
+indien schaduwen niet mogen gerenderd worden. Hou er rekening mee dat dit veld niet
+verplicht aanwezig is. Als het afwezig is, mogen er geen schaduwen gerenderd worden. Dit
+verzekert backwards compatibility met vorige opdrachten.
+• shadowMask (integer): Indien het shadowEnabled veld gelijk is aan true dan bevat dit
+veld de size van de shadowMask. Als er geen schaduwen gerenderd moeten worden dan hoeft
+dit niet aanwezig te zijn.
+Ter illustratie wordt hieronder een voorbeeld van de gewijzigde General sectie weergegeven:
+[General]
+size = 1024
+backgroundcolor = (0, 0, 0)
+type = "LightedZBuffering"
+nrLights = 1
+shadowEnabled = TRUE
+shadowMask = 2048
+nrFigures = 90
+eye = (100, 0, 0)
+
+Texture Mapping (0.75 punt)
+Implementeer texture mapping voor vlakke oppervlakken, bollen of willekeurige oppervlakken. Je
+hoeft slechts één vorm van texture mapping (naar keuze) te implementeren. Verder wordt er ook
+geen ini-formaat voor deze opdracht opgelegd en worden er geen voorbeeld bestanden gegeven.
+Belangrijk: Zorg bij het insturen van je engine ervoor dat je voldoende ini-files mee instuurt
+zodat we de werking van deze fuctionaliteit kunnen testen.
+
+1
+
+

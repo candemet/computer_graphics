@@ -1,0 +1,154 @@
+Opdracht Schaduw & Texture
+Mapping
+Tim Apers
+
+Schaduw
+• Opdracht: Voeg ondersteuning voor het weergeven van
+schaduw toe aan je engine
+– Het weergeven van schaduwen moet enkel ondersteund
+worden voor puntlichtbronnen.
+– Bij het gebruik van schaduw mag je ervan uitgaan dat deze
+lichtbronnen zich buiten de te renderen 3D tekeningen
+bevinden.
+
+Practicum Computer Graphics: Bollen & Cilinders
+
+2
+
+Datastructuren
+• Pas de bestaande datastructuren aan om het gebruik
+van schaduwen te ondersteunen:
+– Voor elke puntbron moet er een “shadowmask” worden
+bijgehouden.
+class PointLight: public Light
+{
+public:
+//de locatie van de puntbron
+Vector3D location;
+};
+//de shadowmask voor deze lichtbron
+ZBuffer shadowMask;
+
+};
+
+//De eyepoint transformatie matrix om de wereld
+//Vanuit het oogpunt van het lichtpunt weer te geven
+Matrix eye;
+//Waardes nodig om een punt in de shadowmask op te zoeken
+double d, dx, dy;
+
+Practicum Computer Graphics: Bollen & Cilinders
+
+3
+
+Toepassen van Schaduw
+• Bereken voor elk lichtpunt
+– De eyepoint tranformatie
+– De shadowmask
+– Reeds geïmplementeerd
+• Pas Z-Buffering toe vanuit het
+lichtpunt
+– Gebruik een lege Lights3D
+structuur
+– Kleuren zijn niet van
+belang, enkel de Z-Buffer
+
+• Pas daarna Z-Buffering toe
+vanuit het oogpunt
+
+Practicum Computer Graphics: Bollen & Cilinders
+
+4
+
+Berekenen van de lichtbijdrage
+• Voor elke te tekenen pixel:
+–
+– Zet om naar wereldcoördinaten:
+• Projectie omkeren:
+–
+
+P
+
+–
+• Vermenigvuldig met de inverse eyepoint
+transformatiematrix:
+–
+P’e
+
+– Gebruik: Matrix::inv();
+
+Practicum Computer Graphics: Bollen & Cilinders
+
+5
+
+Berekenen van de lichtbijdrage
+• Voor elke te tekenen pixel:
+– Zet om naar shadowmask coördinaten
+• Eyepoint transformatie
+–
+
+P’L
+
+P
+
+• Projectie:
+–
+–
+
+– Kijk of de invZL waarde overeenkomt met
+die uit de shadowmask:
+• Zie cursus p. 69
+
+P’e
+
+Practicum Computer Graphics: Bollen & Cilinders
+
+6
+
+Texture Mapping
+• Opdracht: Voeg ondersteuning voor het toepassen van
+texture mapping toe aan je engine
+– Je hoeft slechts één vorm van texture mapping (naar keuze) te
+voorzien.
+– Er wordt geen ini-formaat opgelegd en er worden geen testfiles gegeven. Het input formaat is voor deze opdracht vrij te
+kiezen.
+
+Practicum Computer Graphics: Bollen & Cilinders
+
+7
+
+Texture Mapping
+• Inlezen van textures:
+#include ”easy_image.h"
+#include <iostream>
+#include <fstream>
+int main()
+{
+img::EasyImage texture;
+std::ifstream fin("texture.bmp");
+fin >> texture;
+fin.close();
+std::cout << "Read a texture with width: “<< texture.get_width()
+<< " and height: " << texture.get_height()
+<< std::endl;
+return 0;
+}
+
+Practicum Computer Graphics: Bollen & Cilinders
+
+8
+
+Texture Mapping
+• Tips
+– De img::EasyImage klasse kan enkel BMP-afbeeldingen inlezen.
+Die neemt aan dat er per pixel 24 bits zijn (8 bits elk voor de R,
+G en B componenten) en dat er vooraf geen color space
+informatie staat (BMP v3).
+– Je kan afbeeldingen omzetten naar BMP v3 met een image
+editor, zoals bv. GIMP.
+
+Practicum Computer Graphics: Bollen & Cilinders
+
+9
+
+

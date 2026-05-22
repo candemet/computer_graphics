@@ -14,14 +14,18 @@
 #include <stdexcept>
 #include <string>
 
-struct Color {
-    double red;
-    double green;
-    double blue;
 
-    Color() : red(0), green(0), blue(0) {}
-    Color(double r, double g, double b) : red(r), green(g), blue(b) {}
-};
+
+// struct Color {
+//     double red;
+//     double green;
+//     double blue;
+//
+//     Color() : red(0), green(0), blue(0) {}
+//     Color(double r, double g, double b) : red(r), green(g), blue(b) {}
+// };
+
+static bool g_backfaceCulling = true;
 
 struct Point2D {
     double x;
@@ -38,6 +42,13 @@ struct Line2D {
 
 
 typedef std::list<Line2D> Lines2D;
+
+// beter afronden voor kleuren
+static int rounder(double v) {
+    if (v < 0.0) v = 0.0;
+    if (v > 1.0) v = 1.0;
+    return static_cast<int>(lround(v * 255.0));
+}
 
 // Input: List of Line2D
 // Output: xMin, xMax, yMin, yMax (respectively)
@@ -125,11 +136,6 @@ img::EasyImage draw2DLines(const Lines2D &lines, const int size, const img::Colo
             (y0 < 0 && y1 < 0) || (y0 >= h && y1 >= h)) {
             continue;
         }
-
-        x0 = std::clamp(x0, 0, w - 1);
-        y0 = std::clamp(y0, 0, h - 1);
-        x1 = std::clamp(x1, 0, w - 1);
-        y1 = std::clamp(y1, 0, h - 1);
 
 
         image.draw_line(
@@ -300,15 +306,26 @@ Matrix figureTransform(const double scale,
     return scaleFigure(scale) * rotateX(rotX) * rotateY(rotY) * rotateZ(rotZ) * translate(center);
 }
 
-void applyTransformation(Figure &figure, Matrix &matrix) {
+void applyTransformation(Figure &figure, const Matrix &matrix) {
     for (Vector3D &point : figure.points) {
         point *= matrix;
     }
 }
 
-void applyTransformation(Figures3D &figures, Matrix &matrix) {
+void applyTransformation(Figures3D &figures, const Matrix &matrix) {
     for (Figure &f : figures) {
         applyTransformation(f, matrix);
+    }
+}
+
+void applyTransformation(Lights3D& lights, const Matrix &matrix) {
+    for (auto& light : lights) {
+        if (light.infinity) {
+            light.direction *= matrix;
+            light.direction.normalise();
+        } else {
+            light.location *= matrix;
+        }
     }
 }
 
@@ -347,54 +364,60 @@ Matrix eyePointTrans(const Vector3D &eyepoint) {
 }
 
 Point2D doProjection(const Vector3D &point, const double d = 1.0) {
-    if (std::abs(point.z) < 1e-9) {
-        // delen door 0
-        return {0.0, 0.0};
-    }
-
     return {d * point.x / (-point.z), d * point.y / (-point.z)};
 }
 
 Lines2D doProjection( const Figures3D &figs) {
     Lines2D lines;
+    double eps = 1e-9;
 
     for (const Figure &fig :figs) {
         for (const Face &face : fig.faces) {
-            if (face.point_indexes.size() < 2) {
-                continue;
-            }
+            if (face.point_indexes.size() < 2) continue;
+
             for (size_t i = 0; i < face.point_indexes.size(); i++) {
                 const int a = face.point_indexes[i];
                 const int b = face.point_indexes[(i + 1) % face.point_indexes.size()];
 
-                if ( a < 0 || b < 0) {
-                    continue;
-                }
-                if ( a >= static_cast<int>(fig.points.size()) || b >= static_cast<int>(fig.points.size())) {
-                    continue;
-                }
+                if ( a < 0 || b < 0) continue;
+                if ( a >= static_cast<int>(fig.points.size()) || b >= static_cast<int>(fig.points.size())) continue;
+
                 const Vector3D &pa = fig.points[a];
                 const Vector3D &pb = fig.points[b];
 
-                lines.push_back({doProjection(pa), doProjection(pb), fig.color, pa.z, pb.z});
+                if (pa.z  > -eps || pb.z > -eps) continue;
+
+                // lines.push_back({doProjection(pa), doProjection(pb), fig.color, pa.z, pb.z});
+                img::Color lineCol(
+                static_cast<uint8_t>(rounder(fig.color.red)),
+                static_cast<uint8_t>(rounder(fig.color.green)),
+                static_cast<uint8_t>(rounder(fig.color.blue)));
+
+                lines.push_back({doProjection(pa), doProjection(pb), lineCol, pa.z, pb.z});
+
             }
         }
     }
     return lines;
 }
 
-// beter afronden voor kleuren
-static int rounder(double v) {
-    if (v < 0.0) v = 0.0;
-    if (v > 1.0) v = 1.0;
-    return static_cast<int>(lround(v * 255.0));
-}
+
 
 // static img::Color to_img_color(const ini::DoubleTuple &rgb01) {
 //     return img::Color(lround(rgb01[0] * 255.0), lround(rgb01[1] * 255.0), lround(rgb01[2] * 255.0));
 // }
+
 static img::Color to_img_color(const ini::DoubleTuple &rgb01) {
-    return img::Color(rounder(rgb01[0]), rounder(rgb01[1]), rounder(rgb01[2]));
+    return {
+        static_cast<uint8_t>(rounder(rgb01[0])),
+        static_cast<uint8_t>(rounder(rgb01[1])),
+        static_cast<uint8_t>(rounder(rgb01[2]))
+    };
+}
+
+// helper voor ColorD
+static ColorD to_colord(const ini::DoubleTuple &rgb01) {
+    return ColorD(rgb01[0], rgb01[1], rgb01[2]);
 }
 
 static Vector3D tuple_to_point3d(const ini::DoubleTuple &tuple) {
@@ -407,7 +430,7 @@ static Vector3D tuple_to_vector3d(const ini::DoubleTuple &tuple) {
 
 Figure parseLineDrawingFigure(const ini::Configuration &configuration, const std::string &sectionName) {
     Figure figure;
-    figure.color = to_img_color(configuration[sectionName]["color"].as_double_tuple_or_die());
+    figure.color = to_colord(configuration[sectionName]["color"].as_double_tuple_or_die());
 
     // points
     const int nrPoints = configuration[sectionName]["nrPoints"].as_int_or_die();
@@ -505,7 +528,7 @@ static void rotateH(Turtle3D& turtle, double angle) {
 
 Figure parse3DLSystemFigure(const ini::Configuration &configuration, const std::string &sectionName) {
     Figure figure;
-    figure.color = to_img_color(configuration[sectionName]["color"].as_double_tuple_or_die());
+    figure.color = to_colord(configuration[sectionName]["color"].as_double_tuple_or_die());
 
     const std::string inputfile = configuration[sectionName]["inputfile"].as_string_or_die();
     std::ifstream lFile(inputfile);
@@ -593,7 +616,7 @@ static Figure parseWireframeFigure(const ini::Configuration& configuration, cons
     Figure figure;
 
     if (type == "LineDrawing") {
-        return parseLineDrawingFigure(configuration, sectionName);
+        figure = parseLineDrawingFigure(configuration, sectionName);
     } else if (type == "Cube") {
         figure = createCube();
     } else if (type == "Tetrahedron") {
@@ -621,13 +644,57 @@ static Figure parseWireframeFigure(const ini::Configuration& configuration, cons
         const int n = configuration[sectionName]["n"].as_int_or_die();
         const int m = configuration[sectionName]["m"].as_int_or_die();
         figure = createTorus(r, R, n, m);
+    } else if (type == "BuckyBall") {
+        figure = createBuckyBall();
+    } else if (type == "MengerSponge") {
+        const int nrIterations = configuration[sectionName]["nrIterations"].as_int_or_die();
+        figure = createMengerSponge(nrIterations);
     } else if (type == "3DLSystem") {
-        return parse3DLSystemFigure(configuration, sectionName);
+        figure = parse3DLSystemFigure(configuration, sectionName);
     } else {
         return figure;
     }
 
-    figure.color = to_img_color(configuration[sectionName]["color"].as_double_tuple_or_die());
+    // figure.color = to_img_color(configuration[sectionName]["color"].as_double_tuple_or_die());
+    // LIGHTNING SESSION7
+    if (configuration[sectionName]["color"].exists()) {
+        ini::DoubleTuple colTuple = configuration[sectionName]["color"].as_double_tuple_or_die();
+        ColorD parsedColor(colTuple[0], colTuple[1], colTuple[2]);
+
+        figure.color = parsedColor;
+        figure.ambientReflection = parsedColor;
+        figure.diffuseReflection = ColorD(0, 0, 0);
+        figure.specularReflection = ColorD(0, 0, 0);
+    } else {
+        if (configuration[sectionName]["ambientReflection"].exists()) {
+            ini::DoubleTuple amb = configuration[sectionName]["ambientReflection"].as_double_tuple_or_die();
+            figure.ambientReflection = ColorD(amb[0], amb[1], amb[2]);
+        }
+        if (configuration[sectionName]["diffuseReflection"].exists()) {
+            ini::DoubleTuple diff = configuration[sectionName]["diffuseReflection"].as_double_tuple_or_die();
+            figure.diffuseReflection = ColorD(diff[0], diff[1], diff[2]);
+        }
+        if (configuration[sectionName]["specularReflection"].exists()) {
+            ini::DoubleTuple spec = configuration[sectionName]["specularReflection"].as_double_tuple_or_die();
+            figure.specularReflection = ColorD(spec[0], spec[1], spec[2]);
+            figure.reflectionCoefficient = configuration[sectionName]["reflectionCoefficient"].as_double_or_default(0);
+        }
+    }
+
+    // texture
+    if (configuration[sectionName]["texture"].exists()) {
+        figure.texturePath = configuration[sectionName]["texture"].as_string_or_die();
+        auto tex = std::make_shared<img::EasyImage>();
+        std::ifstream fin(figure.texturePath);
+        fin >> *tex;
+        fin.close();
+        figure.texture = tex;
+    }
+    if (configuration[sectionName]["uv"].exists()) {
+        ini::DoubleTuple flat = configuration[sectionName]["uv"].as_double_tuple_or_die();
+        for (size_t k = 0; k + 1 < flat.size(); k += 2)
+            figure.uvs.push_back({flat[k], flat[k+1]});
+    }
 
     const double scale = configuration[sectionName]["scale"].as_double_or_die();
     const double rotX = configuration[sectionName]["rotateX"].as_double_or_die();
@@ -649,10 +716,120 @@ Figures3D parseWireframeFigures(const ini::Configuration &configuration) {
 
     for (int i = 0; i < nrFigures; ++i) {
         const std::string sectionName = "Figure" + std::to_string(i);
-        figs.push_back(parseWireframeFigure(configuration, sectionName));
+        const std::string type = configuration[sectionName]["type"].as_string_or_die();
+
+        // If this is a fractal type, expand into multiple figures
+        if (type.rfind("Fractal", 0) == 0) {
+            const std::string baseType = type.substr(std::string("Fractal").size());
+
+            Figure baseFig;
+            if (baseType == "Cube") baseFig = createCube();
+            else if (baseType == "Tetrahedron") baseFig = createTetrahedron();
+            else if (baseType == "Octahedron") baseFig = createOctahedron();
+            else if (baseType == "Icosahedron") baseFig = createIcosahedron();
+            else if (baseType == "Dodecahedron") baseFig = createDodecahedron();
+            else if (baseType == "BuckyBall") baseFig = createBuckyBall();
+            else {
+                continue;
+            }
+
+            const double scale = configuration[sectionName]["scale"].as_double_or_die();
+            const double rotX = configuration[sectionName]["rotateX"].as_double_or_die();
+            const double rotY = configuration[sectionName]["rotateY"].as_double_or_die();
+            const double rotZ = configuration[sectionName]["rotateZ"].as_double_or_die();
+            const Vector3D center = tuple_to_vector3d(configuration[sectionName]["center"].as_double_tuple_or_die());
+            Matrix mtx = figureTransform(scale, rotX, rotY, rotZ, center);
+            applyTransformation(baseFig, mtx);
+
+            const double fractalScale = configuration[sectionName]["fractalScale"].as_double_or_die();
+            const int nrIterations = configuration[sectionName]["nrIterations"].as_int_or_die();
+
+            Figures3D parts = generateFractal(baseFig, nrIterations, fractalScale);
+
+            // LIGHTNING
+            ColorD baseColor, ambRef, diffRef, specRef;
+            double coeff = 0;
+            bool oldColor = configuration[sectionName]["color"].exists();
+
+            if (oldColor) {
+                ini::DoubleTuple colTuple = configuration[sectionName]["color"].as_double_tuple_or_die();
+                baseColor = ColorD(colTuple[0], colTuple[1], colTuple[2]);
+                ambRef = baseColor;
+            } else {
+                ini::DoubleTuple amb = configuration[sectionName]["ambientReflection"].as_double_tuple_or_die();
+                ambRef = ColorD(amb[0], amb[1], amb[2]);
+
+                if (configuration[sectionName]["diffuseReflection"].exists()) {
+                    ini::DoubleTuple diff = configuration[sectionName]["diffuseReflection"].as_double_tuple_or_die();
+                    diffRef = ColorD(diff[0], diff[1], diff[2]);
+                }
+                if (configuration[sectionName]["specularReflection"].exists()) {
+                    ini::DoubleTuple spec = configuration[sectionName]["specularReflection"].as_double_tuple_or_die();
+                    specRef = ColorD(spec[0], spec[1], spec[2]);
+                    coeff = configuration[sectionName]["reflectionCoefficient"].as_double_or_default(0);
+                }
+            }
+            // img::Color col = to_img_color(configuration[sectionName]["color"].as_double_tuple_or_die());
+
+            for (Figure &p : parts) {
+                p.color = baseColor;
+                p.ambientReflection = ambRef;
+                p.diffuseReflection = diffRef;
+                p.specularReflection = specRef;
+                p.reflectionCoefficient = coeff;
+                figs.push_back(p);
+            }
+        } else {
+            figs.push_back(parseWireframeFigure(configuration, sectionName));
+        }
     }
 
     return figs;
+}
+
+Lights3D parseLights(const ini::Configuration &configuration) {
+    Lights3D lights;
+    int nrLights = configuration["General"]["nrLights"].as_int_or_default(0);
+
+    for (int i = 0; i < nrLights; i++) {
+        std::string lightName = "Light" + std::to_string(i);
+        Light light;
+
+        ini::DoubleTuple amb = configuration[lightName]["ambientLight"].as_double_tuple_or_die();
+        light.ambient = ColorD(amb[0], amb[1], amb[2]);
+
+        if (configuration[lightName]["diffuseLight"].exists()) {
+            ini::DoubleTuple diff = configuration[lightName]["diffuseLight"].as_double_tuple_or_die();
+            light.diffuse = ColorD(diff[0], diff[1], diff[2]);
+        }
+        if (configuration[lightName]["specularLight"].exists()) {
+            ini::DoubleTuple spec = configuration[lightName]["specularLight"].as_double_tuple_or_die();
+            light.specular = ColorD(spec[0], spec[1], spec[2]);
+        }
+
+        light.infinity = configuration[lightName]["infinity"].as_bool_or_default(true);
+        if (light.infinity) {
+            if (configuration[lightName]["direction"].exists()) {
+                light.direction = tuple_to_vector3d(configuration[lightName]["direction"].as_double_tuple_or_die());
+            }
+
+        } else {
+            if (configuration[lightName]["location"].exists()) {
+                light.location = tuple_to_point3d(configuration[lightName]["location"].as_double_tuple_or_die());
+            }
+            light.spotAngle = configuration[lightName]["spotAngle"].as_double_or_default(90.0);
+        }
+        lights.push_back(light);
+    }
+
+    // BACKWARDS COMPATIBILITY
+    if (nrLights == 0) {
+        Light defaultL;
+        defaultL.ambient = ColorD(1.0, 1.0, 1.0);
+        lights.push_back(defaultL);
+    }
+
+    return lights;
 }
 
 
@@ -752,10 +929,10 @@ static void drawZBufLine(ZBuffer& zbuf, img::EasyImage& image,
 // TODO: herschrijven zodat DRY
 img::EasyImage draw2DLinesZBuffered(const Lines2D &lines, const int size, const img::Color& color) {
     if (lines.empty()) {
-        return img::EasyImage();
+        return {};
     }
     if (size == 0) {
-        return img::EasyImage();
+        return {};
     }
 
     std::list<double> bounds = min_max_finder(lines);
@@ -774,7 +951,7 @@ img::EasyImage draw2DLinesZBuffered(const Lines2D &lines, const int size, const 
     double maxRange = std::max(xRange, yRange);
 
     if (maxRange <= 1e-12) {
-        return img::EasyImage(1, 1, color);
+        return {1, 1, color};
     }
 
     double imageX = static_cast<double>(size) * (xRange / maxRange);
@@ -814,10 +991,6 @@ img::EasyImage draw2DLinesZBuffered(const Lines2D &lines, const int size, const 
             continue;
         }
 
-        x0 = std::clamp(x0, 0, w - 1);
-        y0 = std::clamp(y0, 0, h - 1);
-        x1 = std::clamp(x1, 0, w - 1);
-        y1 = std::clamp(y1, 0, h - 1);
 
 
         drawZBufLine(zbuff, image, x0, y0, line.z1, x1, y1, line.z2, line.color);
@@ -934,6 +1107,49 @@ Parameters computeProjectionParamters(Figures3D &figs, int size) {
     return pp;
 }
 
+// Helper pg70: 1/z interpolatie
+// schaduw test: kijk of punt zichtbaar is vanuit puntbron (cursus p. 69)
+static bool isLitByPointLight(const Vector3D& pxlpoint, const Light& light, const Matrix& invEye) {
+    // terug naar wereld, dan naar coordinaten van de lichtbron
+    Vector3D pWorld = pxlpoint * invEye;
+    Vector3D pL = pWorld * light.eye;
+
+    if (pL.z >= 0) return false;
+
+    // projectie in shadowmask
+    double xL = (light.d * pL.x) / (-pL.z) + light.dx;
+    double yL = (light.d * pL.y) / (-pL.z) + light.dy;
+
+    int xs = (int) std::floor(xL);
+    int ys = (int) std::floor(yL);
+    double ax = xL - xs;
+    double ay = yL - ys;
+
+    // randen: niet in schaduw
+    if (xs < 0 || ys < 0
+        || xs + 1 >= (int) light.shadowMask.size()
+        || ys + 1 >= (int) light.shadowMask[0].size()) {
+        return true;
+        }
+
+    // bilineaire interpolatie van 1/z (cursus p. 70, fig 47)
+    double zA = light.shadowMask[xs    ][ys    ];
+    double zB = light.shadowMask[xs + 1][ys    ];
+    double zC = light.shadowMask[xs    ][ys + 1];
+    double zD = light.shadowMask[xs + 1][ys + 1];
+
+    double zE = (1 - ax) * zA + ax * zB;
+    double zF = (1 - ax) * zC + ax * zD;
+    double zMask = (1 - ay) * zE + ay * zF;
+
+    double invZL = 1.0 / pL.z;
+
+    double eps = 0.0001;
+    return zMask >= invZL - eps;
+}
+
+
+
 static void draw_zbuf_triag(
     ZBuffer& zBuffer,
     img::EasyImage& image,
@@ -943,10 +1159,16 @@ static void draw_zbuf_triag(
     double d,
     double dx,
     double dy,
-    const img::Color& color
+    const Figure& fig,
+    const Lights3D &lights,
+    bool shadowEnabled,
+    const Matrix& invEye,
+    const UV& uvA = {},
+    const UV& uvB = {},
+    const UV& uvC = {},
+    bool buildShadowMask = false
 ) {
-
-    constexpr double eps = 1e-9;
+    double eps = 1e-9;
     if (A.z >= -eps || B.z >= -eps || C.z >= -eps) return;
 
 
@@ -957,6 +1179,7 @@ static void draw_zbuf_triag(
     const Vector3D w = Vector3D::cross(B - A, C - A);
     const double k = Vector3D::dot(w, A);
     if (std::abs(k) < eps) return;
+    if (!buildShadowMask && g_backfaceCulling && k > 0) return; // cull backfaces
 
     const double dzdx = w.x / (-d * k);
     const double dzdy = w.y / (-d * k);
@@ -975,6 +1198,14 @@ static void draw_zbuf_triag(
     if (std::abs(area) < eps) return;
     const double invArea = 1.0 / area;
 
+    // Lights
+    Vector3D normal = Vector3D::cross(B - A, C - A);
+    if (Vector3D::dot(normal, A) >= 0.0) {
+        normal = -normal;
+    }
+    normal.normalise();
+
+
     for (int y = minY; y <= maxY; ++y) {
         for (int x = minX; x <= maxX; ++x) {
             const double alpha = ((bx - x) * (cy - y) - (by - y) * (cx - x)) * invArea;
@@ -985,24 +1216,179 @@ static void draw_zbuf_triag(
             const bool insideNeg = (alpha <= 0.0 && beta <= 0.0 && gamma <= 0.0);
             if (!(insidePos || insideNeg)) continue;
 
-            double invZ = 1.0001 * invZG + (x - xG) * dzdx + (y - yG) * dzdy;
+            double zBias = buildShadowMask ? 1.0 : 1.0001;
+            double invZ = zBias * invZG + (x - xG) * dzdx + (y - yG) * dzdy;
+
             if (invZ < zBuffer[x][y]) {
                 zBuffer[x][y] = invZ;
-                image(static_cast<unsigned int>(x), static_cast<unsigned int>(y)) = color;
-            }
+
+                // Lights
+                double realZ = 1.0 / invZ;
+                double realX = (x - dx) * (-realZ) / d;
+                double realY = (y - dy) * (-realZ) / d;
+                Vector3D pxlpoint = Vector3D::point(realX, realY, realZ);
+                //Vector3D pxlpoint_world = pxlpoint * invEye; // wereld coordinaten, voor shadows
+
+                double totalR = 0, totalG = 0, totalB = 0;
+                Vector3D direction = -pxlpoint;
+                direction.normalise();
+
+                for (auto& light : lights) {
+                    // ambient
+                    totalR += light.ambient.red * fig.ambientReflection.red;
+                    totalG += light.ambient.green * fig.ambientReflection.green;
+                    totalB += light.ambient.blue * fig.ambientReflection.blue;
+
+                    // shaduw test
+                    bool lit = true;
+                    if (shadowEnabled && !light.infinity) {
+                        lit = isLitByPointLight(pxlpoint, light, invEye);
+                    }
+                    if (!lit) continue;
+
+                    Vector3D ld;
+                    if (light.infinity) {
+                        ld = -light.direction;
+                    } else {
+                        ld = light.location - pxlpoint;
+                        ld.normalise();
+                    }
+
+
+                    // diffuse
+                    double normalLD = Vector3D::dot(normal, ld);
+                    double spotCutoff = light.infinity ? 0.0 : std::cos(light.spotAngle * M_PI / 180.0);
+
+                    if (normalLD > spotCutoff) {
+                        // pg 64
+                        double diffMulti;
+                        if (light.infinity || light.spotAngle >= 90.0) {
+                            diffMulti = normalLD;
+                        } else {
+                            diffMulti = 1.0 - (1.0 - normalLD) / (1.0 - spotCutoff);
+                        }
+
+                        totalR += fig.diffuseReflection.red * light.diffuse.red * diffMulti;
+                        totalG += fig.diffuseReflection.green * light.diffuse.green * diffMulti;
+                        totalB += fig.diffuseReflection.blue * light.diffuse.blue * diffMulti;
+
+                        // specular
+                        if (fig.reflectionCoefficient > 0) {
+                            Vector3D rDir = (2 * normalLD * normal) - ld;
+                            rDir.normalise();
+
+                            double cosBeta = Vector3D::dot(rDir, direction);
+                            if (cosBeta > 0 && normalLD > 0) {
+                                double specMultiplier = std::pow(cosBeta, fig.reflectionCoefficient);
+                                totalR += light.specular.red   * fig.specularReflection.red   * specMultiplier;
+                                totalG += light.specular.green * fig.specularReflection.green * specMultiplier;
+                                totalB += light.specular.blue  * fig.specularReflection.blue  * specMultiplier;
+                            }
+                        }
+                    }
+                }
+
+                totalR = std::min(1.0, std::max(0.0, totalR));
+                totalG = std::min(1.0, std::max(0.0, totalG));
+                totalB = std::min(1.0, std::max(0.0, totalB));
+
+                img::Color cFinal;
+
+                // texture mapping
+                if (fig.texture) {
+                    // perspectief-correcte UV interpolatie
+                    double iZa = 1.0 / A.z;
+                    double iZb = 1.0 / B.z;
+                    double iZc = 1.0 / C.z;
+                    double wSum = alpha * iZa + beta * iZb + gamma * iZc;
+
+                    double u = (alpha * uvA.u * iZa + beta * uvB.u * iZb + gamma * uvC.u * iZc) / wSum;
+                    double v = (alpha * uvA.v * iZa + beta * uvB.v * iZb + gamma * uvC.v * iZc) / wSum;
+
+                    // herhaal patroon
+                    u = u - std::floor(u);
+                    v = v - std::floor(v);
+
+                    int tx = (int)(u * fig.texture->get_width());
+                    int ty = (int)((1.0 - v) * fig.texture->get_height());
+                    if (tx >= (int) fig.texture->get_width())  tx = fig.texture->get_width()  - 1;
+                    if (ty >= (int) fig.texture->get_height()) ty = fig.texture->get_height() - 1;
+
+                    img::Color tex = (*fig.texture)(tx, ty);
+
+                    cFinal.red   = std::lround(totalR * tex.red);
+                    cFinal.green = std::lround(totalG * tex.green);
+                    cFinal.blue  = std::lround(totalB * tex.blue);
+                } else {
+                    cFinal.red   = std::lround(totalR * 255);
+                    cFinal.green = std::lround(totalG * 255);
+                    cFinal.blue  = std::lround(totalB * 255);
+                }
+
+                image(static_cast<unsigned int>(x), static_cast<unsigned int>(y)) = cFinal;            }
         }
     }
 }
 
 img::EasyImage generate_zbuffering_image(const ini::Configuration &configuration) {
+    g_backfaceCulling = configuration["General"]["backfaceCulling"].as_bool_or_default(true);
+
     int size = configuration["General"]["size"].as_int_or_die();
     img::Color bgColor = to_img_color(configuration["General"]["backgroundcolor"].as_double_tuple_or_die());
 
+    // shadows
+    bool shadowEnabled = configuration["General"]["shadowEnabled"].as_bool_or_default(false);
+    int shadowMaskSize = 0;
+
+    if (shadowEnabled) {
+        shadowMaskSize = configuration["General"]["shadowMask"].as_int_or_die();
+    }
+
     Figures3D figures = parseWireframeFigures(configuration);
+    Lights3D lights = parseLights(configuration); // Lights
 
     Vector3D eye = tuple_to_point3d(configuration["General"]["eye"].as_double_tuple_or_die());
     Matrix eyeMatrix = eyePointTrans(eye);
+
+    // shadows
+    if (shadowEnabled) {
+        for (auto& light : lights) {
+            if (light.infinity) continue;
+
+            light.eye = eyePointTrans(light.location);
+            Figures3D shadowFigures = triangulateFigures3D(figures);
+            applyTransformation(shadowFigures, light.eye);
+
+            Parameters shadowPm = computeProjectionParamters(shadowFigures, shadowMaskSize);
+            light.d = shadowPm.d;
+            light.dx = shadowPm.dx;
+            light.dy = shadowPm.dy;
+
+            light.shadowMask = ZBuffer(shadowPm.width, shadowPm.height);
+            img::EasyImage resultImage(shadowPm.width, shadowPm.height);
+            Lights3D noLights;
+
+            for (auto& fig : shadowFigures) {
+                for (auto& face : fig.faces) {
+                    if (face.point_indexes.size() != 3) continue;
+                    const Vector3D &A = fig.points[face.point_indexes[0]];
+                    const Vector3D &B = fig.points[face.point_indexes[1]];
+                    const Vector3D &C = fig.points[face.point_indexes[2]];
+
+
+                    draw_zbuf_triag(light.shadowMask, resultImage, A, B, C, light.d, light.dx,
+                        light.dy, fig, noLights, false, Matrix(),
+                        {}, {}, {}, true);
+
+                }
+
+            }
+        }
+    }
+
     applyTransformation(figures, eyeMatrix);
+    applyTransformation(lights, eyeMatrix); // Lights
+
 
     Figures3D triFigures = triangulateFigures3D(figures);
 
@@ -1027,11 +1413,17 @@ img::EasyImage generate_zbuffering_image(const ini::Configuration &configuration
             const Vector3D &B = fig.points[i1];
             const Vector3D &C = fig.points[i2];
 
-            const Vector3D n = Vector3D::cross(B - A, C - A);
-            if (Vector3D::dot(n, A) >= 0.0) continue;
+            // const Vector3D n = Vector3D::cross(B - A, C - A);
+
+            UV uvA, uvB, uvC;
+            if (fig.uvs.size() == fig.points.size()) {
+                uvA = fig.uvs[i0];
+                uvB = fig.uvs[i1];
+                uvC = fig.uvs[i2];
+            }
 
 
-            draw_zbuf_triag(zbuf, image, A, B, C, pp.d, pp.dx, pp.dy, fig.color);
+            draw_zbuf_triag(zbuf, image, A, B, C, pp.d, pp.dx, pp.dy, fig, lights, shadowEnabled, Matrix::inv(eyeMatrix), uvA, uvB, uvC);
         }
     }
 
@@ -1100,7 +1492,7 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
     else if (type == "ZBufferedWireframe") {
         return generate_zbuffered_wireframe_image(configuration);
     }
-    else if (type == "ZBuffering") {
+    else if (type == "ZBuffering" || type == "LightedZBuffering") {
         return generate_zbuffering_image(configuration);
     }
 

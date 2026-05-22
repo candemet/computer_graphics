@@ -114,13 +114,7 @@ zijn.
 
 ### Sessie 6 — BuckyBall (cursus §17, p. 55)
 
-De cursus beschrijft hoe een BuckyBall (truncated icosahedron) wordt
-geconstrueerd door elke driehoek van een icosahedron op te delen in een
-gelijkzijdige zeshoek en drie hoekdriehoeken. Deze engine retourneert in
-plaats daarvan een **gesubdivideerde icosahedron** (`createSphere(1.0, 1)`)
-als placeholder. Het resultaat ziet er bolvormig uit maar mist de zeshoeken
-en vijfhoeken die een echte BuckyBall karakteriseren. `FractalBuckyBall`
-en `ThickBuckyBall` werken correct op deze placeholder.
+Niet geimplementeerd zoals in de cursus. In plaats daarvan een heel simpele variant.
 
 ### Sessie 5 — Triangulatie
 
